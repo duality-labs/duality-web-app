@@ -261,8 +261,8 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-top">
           {topBuckets?.map((bucket, index) => {
-            const [, price, reserves] = bucket || [];
-            return price && reserves ? (
+            const [minPrice, price, reserves] = bucket || [];
+            return minPrice && price && reserves ? (
               <OrderbookListRow
                 key={price}
                 price={price}
@@ -273,6 +273,11 @@ export default function OrderBookList({
                 amountDecimalPlaces={amountDecimalPlacesB}
                 variant="error"
                 active={price && priceIndication && price <= priceIndication}
+                hovered={
+                  priceIndication &&
+                  minPrice < priceIndication &&
+                  priceIndication <= price
+                }
                 onHighlight={onHighlightPrice}
                 onClick={(bucketPrice) => {
                   setLimitPrice?.(
@@ -320,8 +325,8 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-bottom">
           {bottomBuckets?.map((bucket, index) => {
-            const [, price, reserves] = bucket || [];
-            return price && reserves ? (
+            const [maxPrice, price, reserves] = bucket || [];
+            return maxPrice && price && reserves ? (
               <OrderbookListRow
                 key={price}
                 price={price}
@@ -332,6 +337,11 @@ export default function OrderBookList({
                 amountDecimalPlaces={amountDecimalPlacesA}
                 variant="success"
                 active={price && priceIndication && price >= priceIndication}
+                hovered={
+                  priceIndication &&
+                  maxPrice > priceIndication &&
+                  priceIndication >= price
+                }
                 onHighlight={onHighlightPrice}
                 onClick={(bucketPrice) => {
                   setLimitPrice?.(
@@ -438,6 +448,7 @@ function OrderbookListRow({
   amountDecimalPlaces = 2,
   variant,
   active,
+  hovered,
   onHighlight,
   onClick,
 }: {
@@ -449,29 +460,24 @@ function OrderbookListRow({
   amountDecimalPlaces?: number;
   variant?: 'success' | 'error';
   active?: boolean | 0;
+  hovered?: boolean | 0;
   onHighlight?: (bucketPrice: number | undefined) => void;
   onClick?: (bucketPrice: number) => void;
 }) {
   // keep track of hover state and use as a price indication in parents
-  const [hovered, setHovered] = useState<boolean>(false);
   const onHover = useCallback(
-    (
-      e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-      bucketPrice: number | undefined
-    ) => {
-      // set hovered state
-      setHovered(!!bucketPrice);
+    (bucketPrice: number | undefined) => {
       // set parent state
       onHighlight?.(bucketPrice);
     },
     [onHighlight]
   );
   const onHoverIn = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
-    (e) => onHover(e, bucketPrice),
+    () => onHover(bucketPrice),
     [onHover, bucketPrice]
   );
   const onHoverOut = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
-    (e) => onHover(e, undefined),
+    () => onHover(undefined),
     [onHover]
   );
 
