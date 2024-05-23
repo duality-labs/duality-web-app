@@ -244,7 +244,7 @@ const styles = {
     width: 96,
   },
   open: {
-    width: 80,
+    width: 72,
   },
   closed: {
     width: 36,
