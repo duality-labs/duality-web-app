@@ -3,7 +3,6 @@
 
 .orderbook-page {
   .chart-depth-connector {
-    width: 90px;
     margin-right: -1px;
     z-index: 2;
 
@@ -11,6 +10,9 @@
       position: relative;
       overflow: hidden;
       flex: 1 1 0;
+
+      transition: width ease 0.5s;
+
       canvas {
         position: absolute;
         top: 0;

@@ -185,7 +185,15 @@ export default function OrderbookChartConnector({
   useResizeObserver(containerRef, () => draw(canvas, containerRef.current));
 
   return (
-    <div className="connector-container" ref={containerRef}>
+    <div
+      className="connector-container"
+      ref={containerRef}
+      style={
+        showIndividualBuckets || showCumulativeBuckets
+          ? styles.open
+          : styles.closed
+      }
+    >
       <canvas className="flex" ref={getCanvasRef}></canvas>
       <div className="connection-controls col m-3 gap-3">
         <button
@@ -220,3 +228,12 @@ export default function OrderbookChartConnector({
     </div>
   );
 }
+
+const styles = {
+  open: {
+    width: 80,
+  },
+  closed: {
+    width: 48,
+  },
+};
