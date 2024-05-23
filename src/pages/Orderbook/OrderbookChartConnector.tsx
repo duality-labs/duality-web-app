@@ -105,14 +105,14 @@ export default function OrderbookChartConnector({
         ctx.strokeStyle = 'white';
         ctx.beginPath();
         connectionLines.forEach(([y1, y2]) => {
-          ctx.moveTo(sharpPoint(connectionCurve[0]), sharpPoint(y1));
-          ctx.lineTo(sharpPoint(connectionCurve[1]), sharpPoint(y1));
+          ctx.moveTo(connectionCurve[0], sharpPoint(y1));
+          ctx.lineTo(connectionCurve[1], sharpPoint(y1));
           ctx.bezierCurveTo(
-            ...[sharpPoint(connectionCurve[2]), sharpPoint(y1)],
-            ...[sharpPoint(connectionCurve[3]), sharpPoint(y2)],
-            ...[sharpPoint(connectionCurve[4]), sharpPoint(y2)]
+            ...[connectionCurve[2], sharpPoint(y1)],
+            ...[connectionCurve[3], y2],
+            ...[connectionCurve[4], y2]
           );
-          ctx.lineTo(sharpPoint(connectionCurve[5]), sharpPoint(y2));
+          ctx.lineTo(connectionCurve[5], y2);
         });
         ctx.stroke();
       }
