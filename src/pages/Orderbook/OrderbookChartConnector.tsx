@@ -189,7 +189,9 @@ export default function OrderbookChartConnector({
       className="connector-container"
       ref={containerRef}
       style={
-        showIndividualBuckets || showCumulativeBuckets
+        showCumulativeBuckets
+          ? styles.max
+          : showIndividualBuckets
           ? styles.open
           : styles.closed
       }
@@ -230,6 +232,9 @@ export default function OrderbookChartConnector({
 }
 
 const styles = {
+  max: {
+    width: 96,
+  },
   open: {
     width: 80,
   },
