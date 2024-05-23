@@ -29,6 +29,8 @@
 
       button {
         width: 2em;
+        width: 1.5em;
+        padding: paddings.$p-2 paddings.$p-2;
         background-color: var(--page-card);
 
         &:hover,
@@ -37,7 +39,7 @@
         }
 
         .button-box {
-          height: 0.25em;
+          height: 0.175em;
           width: 1em;
         }
         .bg-green {
@@ -48,7 +50,7 @@
         }
 
         .button-box {
-          opacity: 0.3;
+          opacity: 0.4;
         }
         &.active .button-box {
           opacity: 1;

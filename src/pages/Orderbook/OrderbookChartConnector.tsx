@@ -205,34 +205,34 @@ export default function OrderbookChartConnector({
       }
     >
       <canvas className="flex" ref={getCanvasRef}></canvas>
-      <div className="connection-controls col m-3 gap-3">
+      <div className="connection-controls col m-sm gap-3">
         <button
-          className={['button py-2 px-3', showIndividualBuckets && 'active']
+          className={['button', showIndividualBuckets && 'active']
             .filter(Boolean)
             .join(' ')}
           title="Bucket Depth"
           onClick={toggleShowIndividualBuckets}
         >
-          <div className="button-box bg-red" style={{ width: 2 }}></div>
-          <div className="button-box bg-red" style={{ width: 5 }}></div>
-          <div className="button-box bg-red" style={{ width: 10 }}></div>
-          <div className="button-box bg-green" style={{ width: 10 }}></div>
-          <div className="button-box bg-green" style={{ width: 5 }}></div>
-          <div className="button-box bg-green" style={{ width: 2 }}></div>
+          <div className="button-box bg-red" style={styles.boxWidth1}></div>
+          <div className="button-box bg-red" style={styles.boxWidth2}></div>
+          <div className="button-box bg-red" style={styles.boxWidth3}></div>
+          <div className="button-box bg-green" style={styles.boxWidth3}></div>
+          <div className="button-box bg-green" style={styles.boxWidth2}></div>
+          <div className="button-box bg-green" style={styles.boxWidth1}></div>
         </button>
         <button
-          className={['button py-2 px-3', showCumulativeBuckets && 'active']
+          className={['button', showCumulativeBuckets && 'active']
             .filter(Boolean)
             .join(' ')}
           title="Cumulative Depth"
           onClick={toggleShowCumulativeBuckets}
         >
-          <div className="button-box bg-red" style={{ width: 15 }}></div>
-          <div className="button-box bg-red" style={{ width: 12 }}></div>
-          <div className="button-box bg-red" style={{ width: 10 }}></div>
-          <div className="button-box bg-green" style={{ width: 10 }}></div>
-          <div className="button-box bg-green" style={{ width: 12 }}></div>
-          <div className="button-box bg-green" style={{ width: 15 }}></div>
+          <div className="button-box bg-red" style={styles.boxWidth5}></div>
+          <div className="button-box bg-red" style={styles.boxWidth4}></div>
+          <div className="button-box bg-red" style={styles.boxWidth2}></div>
+          <div className="button-box bg-green" style={styles.boxWidth2}></div>
+          <div className="button-box bg-green" style={styles.boxWidth4}></div>
+          <div className="button-box bg-green" style={styles.boxWidth5}></div>
         </button>
       </div>
     </div>
@@ -247,6 +247,21 @@ const styles = {
     width: 80,
   },
   closed: {
-    width: 48,
+    width: 36,
+  },
+  boxWidth1: {
+    width: '0.2em',
+  },
+  boxWidth2: {
+    width: '0.45em',
+  },
+  boxWidth3: {
+    width: '0.6em',
+  },
+  boxWidth4: {
+    width: '0.6em',
+  },
+  boxWidth5: {
+    width: '0.8em',
   },
 };
