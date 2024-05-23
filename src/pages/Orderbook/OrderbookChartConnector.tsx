@@ -71,6 +71,7 @@ export default function OrderbookChartConnector({
         ctx?.clearRect(0, 0, width, height);
         // draw elements
         if (connectionLines?.length) {
+          // note: I don't know why but these lines appear over the areas
           drawConnectionLines(ctx, connectionLines);
         }
         connectionAreas?.forEach((connectionArea) => {
@@ -87,6 +88,11 @@ export default function OrderbookChartConnector({
             drawChartArea(ctx, chartArea);
           }
         });
+        // draw lines over buckets
+        // note: yes this is duplicated: need to draw once over each element
+        if (connectionLines?.length) {
+          drawConnectionLines(ctx, connectionLines);
+        }
       }
 
       // define drawing functions
