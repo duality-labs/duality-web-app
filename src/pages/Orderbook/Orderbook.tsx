@@ -51,6 +51,9 @@ function Orderbook() {
   const [bucketResolution, setBucketResolution] = useState<number>();
   const buckets = useBuckets(tokenA, tokenB, bucketResolution);
 
+  const [showIndividualBuckets, setShowIndividualBuckets] = useState(false);
+  const [showCumulativeBuckets, setShowCumulativeBuckets] = useState(false);
+
   const [depthBucketOffsets, setDepthBucketOffsets] = useState<
     BucketOffset[][]
   >([]);
@@ -187,7 +190,10 @@ function Orderbook() {
   }, [buckets, chartPriceAxis, currentPrice, depthBucketOffsets]);
 
   const chartReserveBuckets = useMemo<ChartArea[] | undefined>(() => {
-    if (depthBucketConnections) {
+    if (
+      depthBucketConnections &&
+      (showIndividualBuckets || showCumulativeBuckets)
+    ) {
       const [connectionsA = [], connectionsB = []] = depthBucketConnections;
       const reservesAreasA = connectionsA.map<
         [y1: number, y2: number, reserves: number]
@@ -196,14 +202,20 @@ function Orderbook() {
         return [y1, y2, reserves];
       });
       let cumulativeReservesA = 0;
-      const cumulativeReservesAreasA = reservesAreasA.map<
-        [y1: number, y2: number, reserves: number]
-      >(([y1, y2, reserves], index, reservesAreas) => {
-        // either value should be within the chart bounds above zero
-        cumulativeReservesA += reserves;
-        const nextReserves = reservesAreas[index + 1];
-        return [y1, nextReserves ? nextReserves[0] : y2, cumulativeReservesA];
-      });
+      const cumulativeAreasA = showCumulativeBuckets
+        ? reservesAreasA.map<[y1: number, y2: number, reserves: number]>(
+            ([y1, y2, reserves], index, reservesAreas) => {
+              // either value should be within the chart bounds above zero
+              cumulativeReservesA += reserves;
+              const nextReserves = reservesAreas[index + 1];
+              return [
+                y1,
+                nextReserves ? nextReserves[0] : y2,
+                cumulativeReservesA,
+              ];
+            }
+          )
+        : [];
       const reservesAreasB = connectionsB.map<
         [y1: number, y2: number, reserves: number]
       >(([[y1], [y2], reserves]) => {
@@ -211,25 +223,36 @@ function Orderbook() {
         return [y1, y2, reserves];
       });
       let cumulativeReservesB = 0;
-      const cumulativeReservesAreasB = reservesAreasB.map<
-        [y1: number, y2: number, reserves: number]
-      >(([y1, y2, reserves], index, reservesAreas) => {
-        // either value should be within the chart bounds above zero
-        cumulativeReservesB += reserves;
-        const nextReserves = reservesAreas[index + 1];
-        return [y1, nextReserves ? nextReserves[0] : y2, cumulativeReservesB];
-      });
+      const cumulativeAreasB = showCumulativeBuckets
+        ? reservesAreasB.map<[y1: number, y2: number, reserves: number]>(
+            ([y1, y2, reserves], index, reservesAreas) => {
+              // either value should be within the chart bounds above zero
+              cumulativeReservesB += reserves;
+              const nextReserves = reservesAreas[index + 1];
+              return [
+                y1,
+                nextReserves ? nextReserves[0] : y2,
+                cumulativeReservesB,
+              ];
+            }
+          )
+        : [];
       const maxCumulativeReserves =
-        Math.max(
-          cumulativeReservesAreasA.at(-1)?.[2] || 0,
-          cumulativeReservesAreasB.at(-1)?.[2] || 0
-        ) || 1;
+        (showCumulativeBuckets
+          ? Math.max(
+              cumulativeAreasA.at(-1)?.[2] || 0,
+              cumulativeAreasB.at(-1)?.[2] || 0
+            )
+          : Math.max(
+              ...reservesAreasA.map((v) => v[2]),
+              ...reservesAreasB.map((v) => v[2])
+            )) || 1;
       return [
-        ...cumulativeReservesAreasA.map<ChartArea>(([y1, y2, reserves]) => {
+        ...cumulativeAreasA.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
           return [y1, y2, reserves / maxCumulativeReserves, '#26801b1a'];
         }),
-        ...cumulativeReservesAreasB.map<ChartArea>(([y1, y2, reserves]) => {
+        ...cumulativeAreasB.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
           return [y1, y2, reserves / maxCumulativeReserves, '#f0515115'];
         }),
@@ -243,7 +266,7 @@ function Orderbook() {
         }),
       ];
     }
-  }, [depthBucketConnections]);
+  }, [depthBucketConnections, showCumulativeBuckets, showIndividualBuckets]);
 
   const priceIndicationBucketConnection = useMemo<
     ConnectionArea | undefined
@@ -327,6 +350,10 @@ function Orderbook() {
                 connectionLines={priceConnectionLines}
                 connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
+                showIndividualBuckets={showIndividualBuckets}
+                showCumulativeBuckets={showCumulativeBuckets}
+                setShowIndividualBuckets={setShowIndividualBuckets}
+                setShowCumulativeBuckets={setShowCumulativeBuckets}
               />
             </div>
             <div className="col">

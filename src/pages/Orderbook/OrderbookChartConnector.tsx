@@ -21,11 +21,29 @@ export default function OrderbookChartConnector({
   connectionLines,
   connectionAreas,
   chartAreas,
+  showIndividualBuckets,
+  showCumulativeBuckets,
+  setShowIndividualBuckets,
+  setShowCumulativeBuckets,
 }: {
   connectionLines?: ConnectionLine[];
   connectionAreas?: ConnectionArea[];
   chartAreas?: ChartArea[];
+  showIndividualBuckets: boolean;
+  showCumulativeBuckets: boolean;
+  setShowIndividualBuckets: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowCumulativeBuckets: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  // improve toggling behaviour to behave like a 3 option state
+  const toggleShowIndividualBuckets = useCallback(() => {
+    setShowIndividualBuckets((show) => !show);
+    setShowCumulativeBuckets(false);
+  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
+  const toggleShowCumulativeBuckets = useCallback(() => {
+    setShowCumulativeBuckets((show) => !show);
+    setShowIndividualBuckets(false);
+  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
+
   // define what to draw
   const draw = useCallback(
     (canvas: HTMLCanvasElement | null, container: HTMLDivElement | null) => {
@@ -169,6 +187,36 @@ export default function OrderbookChartConnector({
   return (
     <div className="connector-container" ref={containerRef}>
       <canvas className="flex" ref={getCanvasRef}></canvas>
+      <div className="connection-controls col m-3 gap-3">
+        <button
+          className={['button py-2 px-3', showIndividualBuckets && 'active']
+            .filter(Boolean)
+            .join(' ')}
+          title="Bucket Depth"
+          onClick={toggleShowIndividualBuckets}
+        >
+          <div className="button-box bg-red" style={{ width: 2 }}></div>
+          <div className="button-box bg-red" style={{ width: 5 }}></div>
+          <div className="button-box bg-red" style={{ width: 10 }}></div>
+          <div className="button-box bg-green" style={{ width: 10 }}></div>
+          <div className="button-box bg-green" style={{ width: 5 }}></div>
+          <div className="button-box bg-green" style={{ width: 2 }}></div>
+        </button>
+        <button
+          className={['button py-2 px-3', showCumulativeBuckets && 'active']
+            .filter(Boolean)
+            .join(' ')}
+          title="Cumulative Depth"
+          onClick={toggleShowCumulativeBuckets}
+        >
+          <div className="button-box bg-red" style={{ width: 15 }}></div>
+          <div className="button-box bg-red" style={{ width: 12 }}></div>
+          <div className="button-box bg-red" style={{ width: 10 }}></div>
+          <div className="button-box bg-green" style={{ width: 10 }}></div>
+          <div className="button-box bg-green" style={{ width: 12 }}></div>
+          <div className="button-box bg-green" style={{ width: 15 }}></div>
+        </button>
+      </div>
     </div>
   );
 }
