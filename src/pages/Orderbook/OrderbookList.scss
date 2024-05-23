@@ -40,7 +40,7 @@
       }
     }
     .active td {
-      background-color: var(--page-card-border);
+      background-color: hsla(217, 19%, 27%, 0.275); // var(--page-card-border)
     }
     .orderbook-list__table__ticks-top .hovered td,
     .orderbook-list__table__tick-center.active-top td {

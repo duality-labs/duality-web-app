@@ -288,7 +288,7 @@ function Orderbook() {
             getChartPricePointOffset(chartPriceAxis, priceIndication),
             outerBucket[1][1] || 0,
           ],
-          0.1,
+          0.035,
         ];
       }
     }
