@@ -164,7 +164,7 @@ export default function OrderBookList({
         );
       };
       const centerOffset = addOffset(sections.center);
-      const topCenterOffset = centerOffset;
+      const topCenterOffset = centerOffset + 1;
       const bottomCenterOffset = centerOffset + sections.center.offsetHeight;
 
       // calculate offsets for all buckets
