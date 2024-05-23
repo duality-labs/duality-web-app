@@ -44,6 +44,8 @@ export default function OrderbookChartConnector({
     setShowIndividualBuckets(false);
   }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
 
+  const maxBucketExtent = showCumulativeBuckets ? 1 : 0.9;
+
   // define what to draw
   const draw = useCallback(
     (canvas: HTMLCanvasElement | null, container: HTMLDivElement | null) => {
@@ -154,9 +156,9 @@ export default function OrderbookChartConnector({
         ctx.beginPath();
         // draw top line
         ctx.moveTo(0, y1);
-        ctx.lineTo(weight * connectionCurve[1] + 0.5, y1);
+        ctx.lineTo(weight * connectionCurve[1] * maxBucketExtent + 0.5, y1);
         // draw bottom line
-        ctx.lineTo(weight * connectionCurve[1] + 0.5, y2);
+        ctx.lineTo(weight * connectionCurve[1] * maxBucketExtent + 0.5, y2);
         ctx.lineTo(0, y2);
         // fill
         ctx.fill();
@@ -167,7 +169,7 @@ export default function OrderbookChartConnector({
         return Math.round(value) + 0.5;
       }
     },
-    [chartAreas, connectionAreas, connectionLines]
+    [chartAreas, connectionAreas, connectionLines, maxBucketExtent]
   );
 
   // store ref but also draw on canvas when first found
