@@ -232,7 +232,6 @@ export default function OrderBookList({
           // add token B bucket offsets
           ...filteredBucketsB
             .filter((bucket): bucket is Bucket => !!bucket)
-            .reverse()
             .map(
               ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
                 [innerBound, topCenterOffset - index * tableRowHeight],
@@ -306,7 +305,7 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-top">
-          {filteredBucketsB?.reverse().map((bucket, index) => {
+          {[...filteredBucketsB].reverse().map((bucket, index) => {
             const [minPrice, price, reserves] = bucket || [];
             const lastBucket = bucketsB?.at(-1);
             return minPrice && price && reserves && lastBucket ? (

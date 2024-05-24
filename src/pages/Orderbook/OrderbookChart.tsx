@@ -433,7 +433,7 @@ export default function OrderBookChart({
                 const resolutionInMs = resolutionInMsMap[resolution];
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
-                const chronologicalUpdates = dataUpdates.reverse();
+                const chronologicalUpdates = dataUpdates.slice().reverse();
                 for (const row of chronologicalUpdates) {
                   const bar = getBarFromTimeSeriesRow(row);
                   // add extra empty bars if there would be a gap in time
