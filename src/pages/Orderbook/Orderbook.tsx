@@ -262,7 +262,7 @@ function Orderbook() {
         }),
         ...reservesAreasB.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
-          return [y1, y2, reserves / maxCumulativeReserves, '#c3282a'];
+          return [y1, y2, reserves / maxCumulativeReserves, '#a92325'];
         }),
       ];
     }
