@@ -63,10 +63,12 @@ import {
 } from '../../lib/web3/utils/limitOrders';
 import {
   DexTickUpdateEvent,
+  DexTickUpdateReservesEvent,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import {
   displayPriceToTickIndex,
+  tickIndexToDisplayPrice,
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
@@ -743,9 +745,45 @@ function LimitOrder({
       const price = new BigNumber(simulationResult.response.coin_in.amount).div(
         simulationResult.response.taker_coin_out.amount
       );
+      // track last price state
       setLastKnownPrice(price.toNumber());
     }
   }, [simulationResult?.response]);
+
+  // update slippage indication on chart
+  useEffect(() => {
+    if (simulationResult?.result) {
+      // send slippage indication to rest of Orderbook
+      if (priceTab === 'Swap' && currentPriceAtoB) {
+        const events = simulationResult.result?.events
+          .map<DexTickUpdateReservesEvent>(mapEventAttributes)
+          .filter((event) => event.attributes.TickIndex);
+        const endTickIndex = events?.at(-1)?.attributes.TickIndex;
+        const endPrice =
+          endTickIndex &&
+          tickIndexToDisplayPrice(
+            new BigNumber(endTickIndex),
+            tokenA,
+            tokenB
+          )?.toNumber();
+        setPriceIndication?.(
+          endPrice
+            ? buyMode
+              ? Math.max(currentPriceAtoB, endPrice)
+              : Math.min(currentPriceAtoB, endPrice)
+            : undefined
+        );
+      }
+    }
+  }, [
+    buyMode,
+    currentPriceAtoB,
+    priceTab,
+    setPriceIndication,
+    simulationResult?.result,
+    tokenA,
+    tokenB,
+  ]);
 
   // find coinIn and coinOut from the simulation results
   const tranchedReserves =
