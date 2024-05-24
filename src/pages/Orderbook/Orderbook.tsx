@@ -347,7 +347,7 @@ function Orderbook() {
             </div>
             <div className="chart-depth-connector col">
               <OrderbookChartConnector
-                connectionLines={priceConnectionLines}
+                connectionLines={!tabIndex ? priceConnectionLines : undefined}
                 connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
                 showIndividualBuckets={showIndividualBuckets}
