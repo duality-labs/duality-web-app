@@ -102,7 +102,7 @@
 
 .connection-controls {
   button {
-    padding: paddings.$p-sm paddings.$p-3;
+    padding: paddings.$p-sm paddings.$p-sm;
     background-color: var(--page-card);
 
     &:hover,
@@ -125,5 +125,9 @@
     &.active .button-box {
       opacity: 1;
     }
+  }
+  hr {
+    margin: paddings.$p-sm;
+    border-right-width: 0;
   }
 }

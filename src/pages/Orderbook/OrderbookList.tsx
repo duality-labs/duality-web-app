@@ -85,17 +85,40 @@ export default function OrderBookList({
     }
   }, [currentPrice, buckets]);
 
+  const [showBuyOrders, setShowBuyOrders] = useState(true);
+  const [showSellOrders, setShowSellOrders] = useState(true);
+
+  // improve toggling behaviour to behave like a 3 option state
+  const toggleShowAllOrders = useCallback(() => {
+    setShowBuyOrders(true);
+    setShowSellOrders(true);
+  }, [setShowSellOrders, setShowBuyOrders]);
+  const toggleShowBuyOrders = useCallback(() => {
+    setShowBuyOrders(true);
+    setShowSellOrders(false);
+  }, [setShowSellOrders, setShowBuyOrders]);
+  const toggleShowSellOrders = useCallback(() => {
+    setShowBuyOrders(false);
+    setShowSellOrders(true);
+  }, [setShowSellOrders, setShowBuyOrders]);
+
   const [bucketsA, bucketsB] = buckets || [];
 
   // ensure that a certain amount of liquidity rows are shown in the card
   const [shownTickRows, setShownTickRows] = useState<number>(8);
-  const [filteredBucketsB, filteredBucketsA] = useMemo(() => {
+  const [filteredBucketsA, filteredBucketsB] = useMemo(() => {
     const spacingTicks: undefined[] = Array.from({ length: shownTickRows });
+    const paddedBucketsA = [...(bucketsA ?? []), ...spacingTicks];
+    const paddedBucketsB = [...(bucketsB ?? []), ...spacingTicks];
     return [
-      [...(bucketsB ?? []), ...spacingTicks].slice(0, shownTickRows),
-      [...(bucketsA ?? []), ...spacingTicks].slice(0, shownTickRows),
+      showBuyOrders
+        ? paddedBucketsA.slice(0, shownTickRows * (!showSellOrders ? 2 : 1))
+        : [],
+      showSellOrders
+        ? paddedBucketsB.slice(0, shownTickRows * (!showBuyOrders ? 2 : 1))
+        : [],
     ];
-  }, [bucketsA, bucketsB, shownTickRows]);
+  }, [bucketsA, bucketsB, showBuyOrders, showSellOrders, shownTickRows]);
 
   // find how numbers should be displayed
   const priceDecimalPlaces = useMemo<number | undefined>(() => {
@@ -166,7 +189,7 @@ export default function OrderBookList({
       (sections.top.offsetHeight + sections.bottom.offsetHeight) /
         (sections.top.childElementCount + sections.bottom.childElementCount ||
           1);
-    if (tableRowHeight && tableRowHeight > 0 && currentPrice && buckets) {
+    if (tableRowHeight && tableRowHeight > 0 && currentPrice) {
       // set bucket offsets
       // measure center bucket
       const addOffset = (el: HTMLElement): number => {
@@ -183,7 +206,6 @@ export default function OrderBookList({
       const bottomCenterOffset = centerOffset + sections.center.offsetHeight;
 
       // calculate offsets for all buckets
-      const [bucketsA = [], bucketsB = []] = buckets || [];
       setBucketOffsets?.([
         [
           // add current price bucket
@@ -192,8 +214,8 @@ export default function OrderBookList({
             [currentPrice, bottomCenterOffset],
           ],
           // add token A bucket offsets
-          ...bucketsA
-            .slice(0, shownTickRows)
+          ...filteredBucketsA
+            .filter((bucket): bucket is Bucket => !!bucket)
             .map(
               ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
                 [innerBound, bottomCenterOffset + index * tableRowHeight],
@@ -208,8 +230,9 @@ export default function OrderBookList({
             [currentPrice, topCenterOffset],
           ],
           // add token B bucket offsets
-          ...bucketsB
-            .slice(0, shownTickRows)
+          ...filteredBucketsB
+            .filter((bucket): bucket is Bucket => !!bucket)
+            .reverse()
             .map(
               ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
                 [innerBound, topCenterOffset - index * tableRowHeight],
@@ -223,11 +246,11 @@ export default function OrderBookList({
       setBucketOffsets?.((offsets) => (offsets.length ? [] : offsets));
     }
   }, [
-    buckets,
     currentPrice,
+    filteredBucketsA,
+    filteredBucketsB,
     getTableSections,
     setBucketOffsets,
-    shownTickRows,
   ]);
   // execute on every relevent update
   useResizeObserver(tableContainerRef, updateBucketOffsets);
@@ -462,6 +485,46 @@ export default function OrderBookList({
             <div className="button-box bg-green" style={styles.boxWidth4}></div>
             <div className="button-box bg-green" style={styles.boxWidth5}></div>
           </button>
+          <hr />
+          <button
+            className={['button', showBuyOrders && showSellOrders && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Show Buy and Sell Orders"
+            onClick={toggleShowAllOrders}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-space"></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+          </button>
+          <button
+            className={['button', showSellOrders && !showBuyOrders && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Show Sell Orders Only"
+            onClick={toggleShowSellOrders}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-space"></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+          </button>
+          <button
+            className={['button', showBuyOrders && !showSellOrders && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Show Buy Orders Only"
+            onClick={toggleShowBuyOrders}
+          >
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-space"></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+          </button>
         </div>
         <div
           className="col ml-auto gutter-b-3"
@@ -471,7 +534,7 @@ export default function OrderBookList({
                 ...bucketResolutions.map((resolution) =>
                   Math.abs(getOrderOfMagnitude(resolution))
                 )
-              ) + 2
+              ) + 1.5
             }em`,
           }}
         >
