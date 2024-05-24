@@ -529,9 +529,16 @@ export default function OrderBookChart({
     if (chart) {
       const checkChartAxis = () => {
         setPriceAxis?.((chartPriceAxis) => {
+          const visibleTimeScaleRange = chart?.getVisibleRange();
+          // skip calculation if timescale is not yet visible
+          // because otherwise a measurement function will throw an exception
+          if (!visibleTimeScaleRange.from || !visibleTimeScaleRange.to) {
+            return undefined;
+          }
           const pane = chart?.getPanes()[0];
-          const rightPriceScale = pane?.getRightPriceScales()[0];
-          const visiblePriceRange = rightPriceScale?.getVisiblePriceRange();
+          const rightPriceScale = pane?.getMainSourcePriceScale?.();
+          // this function will throw an exception if series is not yet visible
+          const visiblePriceRange = rightPriceScale?.getVisiblePriceRange?.();
           const newChartPriceAxis: ChartPriceAxisInfo | undefined =
             rightPriceScale && visiblePriceRange
               ? {
