@@ -68,13 +68,6 @@ export default function OrderBookList({
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
-  // ensure that a certain amount of liquidity rows are shown in the card
-  const [shownTickRows, setShownTickRows] = useState<number>(8);
-  const spacingTicks = useMemo(
-    () => Array.from({ length: shownTickRows }).map(() => undefined),
-    [shownTickRows]
-  );
-
   const [previousPrice, setPreviousPrice] = useState<number | undefined>();
   const lastPrice = useRef<number | undefined>(currentPrice || undefined);
   useEffect(() => {
@@ -93,12 +86,16 @@ export default function OrderBookList({
   }, [currentPrice, buckets]);
 
   const [bucketsA, bucketsB] = buckets || [];
-  const [topBuckets, bottomBuckets] = useMemo(() => {
+
+  // ensure that a certain amount of liquidity rows are shown in the card
+  const [shownTickRows, setShownTickRows] = useState<number>(8);
+  const [filteredBucketsB, filteredBucketsA] = useMemo(() => {
+    const spacingTicks: undefined[] = Array.from({ length: shownTickRows });
     return [
-      [...(bucketsB ?? []), ...spacingTicks].slice(0, shownTickRows).reverse(),
+      [...(bucketsB ?? []), ...spacingTicks].slice(0, shownTickRows),
       [...(bucketsA ?? []), ...spacingTicks].slice(0, shownTickRows),
     ];
-  }, [bucketsA, bucketsB, shownTickRows, spacingTicks]);
+  }, [bucketsA, bucketsB, shownTickRows]);
 
   // find how numbers should be displayed
   const priceDecimalPlaces = useMemo<number | undefined>(() => {
@@ -286,7 +283,7 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-top">
-          {topBuckets?.map((bucket, index) => {
+          {filteredBucketsB?.reverse().map((bucket, index) => {
             const [minPrice, price, reserves] = bucket || [];
             const lastBucket = bucketsB?.at(-1);
             return minPrice && price && reserves && lastBucket ? (
@@ -365,7 +362,7 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-bottom">
-          {bottomBuckets?.map((bucket, index) => {
+          {filteredBucketsA?.map((bucket, index) => {
             const [maxPrice, price, reserves] = bucket || [];
             const lastBucket = bucketsA?.at(-1);
             return maxPrice && price && reserves && lastBucket ? (
