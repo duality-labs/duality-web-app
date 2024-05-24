@@ -52,7 +52,7 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
     //       however this isn't necessary to lock to understand the liquidity
     //       visualization we have added to the right of it
   ],
-  enabled_features: [],
+  enabled_features: ['hide_left_toolbar_by_default'],
   charts_storage_url: 'https://saveload.tradingview.com',
   charts_storage_api_version: '1.1',
   // path to static assets of the charting library
