@@ -21,41 +21,5 @@
         bottom: 0;
       }
     }
-
-    .connection-controls {
-      position: absolute;
-      top: 0;
-      right: 0;
-
-      button {
-        width: 2em;
-        width: 1.5em;
-        padding: paddings.$p-2 paddings.$p-2;
-        background-color: var(--page-card);
-
-        &:hover,
-        &:focus {
-          border-color: var(--page-card-border);
-        }
-
-        .button-box {
-          height: 0.175em;
-          width: 1em;
-        }
-        .bg-green {
-          background-color: #26801bff;
-        }
-        .bg-red {
-          background-color: #d6363aff;
-        }
-
-        .button-box {
-          opacity: 0.4;
-        }
-        &.active .button-box {
-          opacity: 1;
-        }
-      }
-    }
   }
 }

@@ -23,27 +23,13 @@ export default function OrderbookChartConnector({
   chartAreas,
   showIndividualBuckets,
   showCumulativeBuckets,
-  setShowIndividualBuckets,
-  setShowCumulativeBuckets,
 }: {
   connectionLines?: ConnectionLine[];
   connectionAreas?: ConnectionArea[];
   chartAreas?: ChartArea[];
   showIndividualBuckets: boolean;
   showCumulativeBuckets: boolean;
-  setShowIndividualBuckets: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowCumulativeBuckets: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  // improve toggling behaviour to behave like a 3 option state
-  const toggleShowIndividualBuckets = useCallback(() => {
-    setShowIndividualBuckets((show) => !show);
-    setShowCumulativeBuckets(false);
-  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
-  const toggleShowCumulativeBuckets = useCallback(() => {
-    setShowCumulativeBuckets((show) => !show);
-    setShowIndividualBuckets(false);
-  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
-
   const maxBucketExtent = showCumulativeBuckets ? 1 : 0.9;
 
   // define what to draw
@@ -197,44 +183,17 @@ export default function OrderbookChartConnector({
       className="connector-container"
       ref={containerRef}
       style={
-        showCumulativeBuckets
-          ? styles.max
-          : showIndividualBuckets
-          ? styles.open
-          : styles.closed
+        connectionLines || connectionLines || chartAreas
+          ? showCumulativeBuckets
+            ? styles.max
+            : showIndividualBuckets
+            ? styles.open
+            : styles.closed
+          : styles.hidden
       }
     >
       <canvas className="flex" ref={getCanvasRef}></canvas>
-      <div className="connection-controls col m-sm gap-3">
-        <button
-          className={['button', showIndividualBuckets && 'active']
-            .filter(Boolean)
-            .join(' ')}
-          title="Bucket Depth"
-          onClick={toggleShowIndividualBuckets}
-        >
-          <div className="button-box bg-red" style={styles.boxWidth1}></div>
-          <div className="button-box bg-red" style={styles.boxWidth2}></div>
-          <div className="button-box bg-red" style={styles.boxWidth3}></div>
-          <div className="button-box bg-green" style={styles.boxWidth3}></div>
-          <div className="button-box bg-green" style={styles.boxWidth2}></div>
-          <div className="button-box bg-green" style={styles.boxWidth1}></div>
-        </button>
-        <button
-          className={['button', showCumulativeBuckets && 'active']
-            .filter(Boolean)
-            .join(' ')}
-          title="Cumulative Depth"
-          onClick={toggleShowCumulativeBuckets}
-        >
-          <div className="button-box bg-red" style={styles.boxWidth5}></div>
-          <div className="button-box bg-red" style={styles.boxWidth4}></div>
-          <div className="button-box bg-red" style={styles.boxWidth2}></div>
-          <div className="button-box bg-green" style={styles.boxWidth2}></div>
-          <div className="button-box bg-green" style={styles.boxWidth4}></div>
-          <div className="button-box bg-green" style={styles.boxWidth5}></div>
-        </button>
-      </div>
+      <div className="connection-controls col m-sm gap-3"></div>
     </div>
   );
 }
@@ -247,21 +206,9 @@ const styles = {
     width: 72,
   },
   closed: {
-    width: 36,
+    width: 30,
   },
-  boxWidth1: {
-    width: '0.2em',
-  },
-  boxWidth2: {
-    width: '0.45em',
-  },
-  boxWidth3: {
-    width: '0.6em',
-  },
-  boxWidth4: {
-    width: '0.6em',
-  },
-  boxWidth5: {
-    width: '0.8em',
+  hidden: {
+    width: '0.5rem',
   },
 };

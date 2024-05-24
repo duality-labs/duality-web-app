@@ -352,8 +352,6 @@ function Orderbook() {
                 chartAreas={chartReserveBuckets}
                 showIndividualBuckets={showIndividualBuckets}
                 showCumulativeBuckets={showCumulativeBuckets}
-                setShowIndividualBuckets={setShowIndividualBuckets}
-                setShowCumulativeBuckets={setShowCumulativeBuckets}
               />
             </div>
             <div className="col">
@@ -382,6 +380,10 @@ function Orderbook() {
                             setPriceIndication={setDepthPriceIndication}
                             setBucketOffsets={setDepthBucketOffsets}
                             setLimitPrice={setLimitPrice}
+                            showIndividualBuckets={showIndividualBuckets}
+                            showCumulativeBuckets={showCumulativeBuckets}
+                            setShowIndividualBuckets={setShowIndividualBuckets}
+                            setShowCumulativeBuckets={setShowCumulativeBuckets}
                           />
                         ) : null,
                     },
@@ -401,6 +403,8 @@ function Orderbook() {
                   buckets,
                   priceIndication,
                   setLimitPrice,
+                  showCumulativeBuckets,
+                  showIndividualBuckets,
                   tokenA,
                   tokenB,
                 ])}

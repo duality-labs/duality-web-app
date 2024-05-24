@@ -30,6 +30,10 @@ export default function OrderBookList({
   setPriceIndication,
   setBucketOffsets,
   setLimitPrice,
+  showIndividualBuckets,
+  showCumulativeBuckets,
+  setShowIndividualBuckets,
+  setShowCumulativeBuckets,
 }: {
   tokenA: Token;
   tokenB: Token;
@@ -40,7 +44,21 @@ export default function OrderBookList({
   setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
   setBucketOffsets?: React.Dispatch<React.SetStateAction<BucketOffset[][]>>;
   setLimitPrice?: (limitPrice: string) => void;
+  showIndividualBuckets: boolean;
+  showCumulativeBuckets: boolean;
+  setShowIndividualBuckets: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowCumulativeBuckets: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  // improve toggling behaviour to behave like a 3 option state
+  const toggleShowIndividualBuckets = useCallback(() => {
+    setShowIndividualBuckets((show) => !show);
+    setShowCumulativeBuckets(false);
+  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
+  const toggleShowCumulativeBuckets = useCallback(() => {
+    setShowCumulativeBuckets((show) => !show);
+    setShowIndividualBuckets(false);
+  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
+
   const onHighlightPrice = useCallback(
     (bucketPrice: number | undefined) => {
       setPriceIndication?.(bucketPrice);
@@ -417,9 +435,39 @@ export default function OrderBookList({
 
   return (
     <>
-      <div className="orderbook-list__toolbar row">
+      <div className="orderbook-list__toolbar row p-1 gapx-1">
+        <div className="connection-controls row gapx-1">
+          <button
+            className={['button', showIndividualBuckets && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Bucket Depth"
+            onClick={toggleShowIndividualBuckets}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth1}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth3}></div>
+            <div className="button-box bg-green" style={styles.boxWidth3}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth1}></div>
+          </button>
+          <button
+            className={['button', showCumulativeBuckets && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Cumulative Depth"
+            onClick={toggleShowCumulativeBuckets}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth5}></div>
+            <div className="button-box bg-red" style={styles.boxWidth4}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth4}></div>
+            <div className="button-box bg-green" style={styles.boxWidth5}></div>
+          </button>
+        </div>
         <div
-          className="col ml-auto mt-1 gutter-b-sm"
+          className="col ml-auto gutter-b-3"
           style={{
             minWidth: `${
               Math.max(
@@ -446,6 +494,24 @@ export default function OrderBookList({
     </>
   );
 }
+
+const styles = {
+  boxWidth1: {
+    width: '0.2em',
+  },
+  boxWidth2: {
+    width: '0.45em',
+  },
+  boxWidth3: {
+    width: '0.6em',
+  },
+  boxWidth4: {
+    width: '0.6em',
+  },
+  boxWidth5: {
+    width: '0.8em',
+  },
+};
 
 function getBucketResolutions(currentPrice?: number | null): number[] {
   const startingOrderOfMagnitude = currentPrice
