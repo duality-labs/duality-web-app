@@ -6,6 +6,13 @@
     overflow: visible;
   }
 
+  .text-warning,
+  .text-error {
+    width: 100%;
+    max-width: 20em;
+    margin: 0 auto;
+  }
+
   // override default select input styles
   .select-input {
     .select-input-selection {
