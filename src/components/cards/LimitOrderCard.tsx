@@ -1119,18 +1119,22 @@ function NumericValueRow({
         {prefix}
         {tooltip && <Tooltip>{tooltip}</Tooltip>}
       </div>
-      <div className="numeric-value-row__loading ml-auto">
-        <FontAwesomeIcon
-          className={['fa-spin', !loading && 'invisible']
-            .filter(Boolean)
-            .join(' ')}
-          icon={faSpinner}
-        />
+      <div className="numeric-value-row__right ml-auto text-right">
+        <span className="nowrap">
+          <span className="numeric-value-row__loading">
+            <FontAwesomeIcon
+              className={['fa-spin', !loading && 'invisible']
+                .filter(Boolean)
+                .join(' ')}
+              icon={faSpinner}
+            />
+          </span>
+          <span className="numeric-value-row__value ml-3">{value}</span>
+        </span>
+        {suffix && (
+          <span className="numeric-value-row__suffix ml-3">{suffix}</span>
+        )}
       </div>
-      <div className="numeric-value-row__value">{value}</div>
-      {suffix && (
-        <div className="numeric-value-row__suffix text-right">{suffix}</div>
-      )}
     </div>
   );
 }
