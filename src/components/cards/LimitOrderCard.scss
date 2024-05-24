@@ -31,6 +31,10 @@
     .numeric-value-row__value {
       color: white;
     }
+    .numeric-value-row__suffix {
+      width: auto;
+      max-width: 13em; // sized to max "demoUSDC per demoNTRN"
+    }
   }
 
   .limit-price {
@@ -74,6 +78,10 @@
         color: var(--error);
       }
     }
+  }
+
+  .limit-expiry-selection {
+    min-width: 24em; // sized so that all options can fit without layout wrapping
   }
   .radio-button-group-switch {
     flex: 0 0 auto;

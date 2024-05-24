@@ -94,13 +94,7 @@ export default function LimitOrderCard({
   setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   return (
-    <div
-      className="page-card flex limitorder-card py-0 px-md"
-      style={{
-        // fix width to a minimum for most pairs to be displayed comfortably
-        minWidth: '25em',
-      }}
-    >
+    <div className="page-card flex limitorder-card py-0 px-md">
       {tokenA && tokenB && (
         <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
           <LimitOrder
@@ -888,7 +882,7 @@ function LimitOrder({
           disabledInput={isLoadingUserBalanceTokenIn}
         ></TokenInputGroup>
       </div>
-      <div className="my-md">
+      <div className="limit-expiry-selection my-md">
         <Drawer expanded={formState.execution === 'GOOD_TIL_TIME'}>
           <div className="row flex-centered">
             <div className="col my-2 mr-2">Expiry</div>
@@ -1120,16 +1114,23 @@ function NumericValueRow({
   tooltip?: string;
 }) {
   return (
-    <div className="numeric-value-row flex row py-2">
+    <div className="numeric-value-row flex row py-2 gapx-3">
       <div className="numeric-value-row__prefix">
         {prefix}
         {tooltip && <Tooltip>{tooltip}</Tooltip>}
       </div>
       <div className="numeric-value-row__loading ml-auto">
-        {loading && <FontAwesomeIcon className="fa-spin" icon={faSpinner} />}
+        <FontAwesomeIcon
+          className={['fa-spin', !loading && 'invisible']
+            .filter(Boolean)
+            .join(' ')}
+          icon={faSpinner}
+        />
       </div>
-      <div className="numeric-value-row__value ml-3">{value}</div>
-      {suffix && <div className="numeric-value-row__suffix ml-3">{suffix}</div>}
+      <div className="numeric-value-row__value">{value}</div>
+      {suffix && (
+        <div className="numeric-value-row__suffix text-right">{suffix}</div>
+      )}
     </div>
   );
 }
