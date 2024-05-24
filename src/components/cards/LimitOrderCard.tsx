@@ -120,7 +120,6 @@ const expirationOptions = {
   '1 hours': '1 hour',
   '1 days': '1 day',
   '1 weeks': '1 week',
-  '1 months': '1 month',
   custom: 'Custom',
 } as const;
 type ExpirationOptions = keyof typeof expirationOptions;
@@ -243,7 +242,7 @@ function LimitOrder({
 
   const cardModeNav = (
     <div className="row">
-      <h3 className="h4 pb-0 pt-lg pr-4">Trade</h3>
+      <h3 className="h4 pb-0 pt-lg pr-md">Trade</h3>
       <div className="col ml-auto">
         <RadioButtonGroupInput<PriceTab>
           className="order-type-input my-4"
@@ -252,7 +251,7 @@ function LimitOrder({
           onChange={switchPriceTab}
         />
       </div>
-      <div className="col ml-4 h3">
+      <div className="col ml-md h3">
         <RadioButtonGroupInput<ModeTab>
           className="order-type-input my-4"
           values={modeTabs}

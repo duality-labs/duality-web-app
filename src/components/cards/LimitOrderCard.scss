@@ -33,7 +33,7 @@
     }
     .numeric-value-row__right {
       width: auto;
-      max-width: 17em; // sized to max "demoUSDC per demoNTRN"
+      max-width: 12em; // sized to max "demoUSDC per<wbr/> demoNTRN"
     }
   }
 
@@ -81,7 +81,7 @@
   }
 
   .limit-expiry-selection {
-    min-width: 24em; // sized so that all options can fit without layout wrapping
+    min-width: 20em; // sized so that all options can fit without layout wrapping
   }
   .radio-button-group-switch {
     flex: 0 0 auto;
