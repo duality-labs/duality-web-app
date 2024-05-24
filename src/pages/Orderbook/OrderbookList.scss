@@ -131,3 +131,38 @@
     border-right-width: 0;
   }
 }
+
+.orderbook-buy-sell-bar {
+  & {
+    justify-content: space-between;
+  }
+  .orderbook-buy-sell-bar_buy-icon,
+  .orderbook-buy-sell-bar_sell-icon {
+    width: 2.4em;
+    text-align: center;
+    border-radius: 0.25rem;
+  }
+  .orderbook-buy-sell-bar_buy-icon {
+    background-color: rgb(38, 128, 27);
+  }
+  .orderbook-buy-sell-bar_sell-icon {
+    background-color: hsl(1, 66%, 40%);
+  }
+  .orderbook-buy-sell-bar_buy-value {
+    color: hsl(125, 54%, 33%);
+  }
+  .orderbook-buy-sell-bar_sell-value {
+    color: hsl(1, 66%, 53%);
+  }
+  .orderbook-buy-sell-bar_buy-bar,
+  .orderbook-buy-sell-bar_sell-bar {
+    border-radius: 0.25rem;
+    opacity: 0.5;
+  }
+  .orderbook-buy-sell-bar_buy-bar {
+    background-color: rgb(38, 128, 27);
+  }
+  .orderbook-buy-sell-bar_sell-bar {
+    background-color: hsl(1, 66%, 40%);
+  }
+}

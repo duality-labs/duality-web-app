@@ -453,6 +453,16 @@ export default function OrderBookList({
     return getBucketResolutions(currentPrice);
   }, [currentPrice]);
 
+  // add all bucket "display reserves" values together for summary bar
+  const bucketBuyPercent = useMemo<number | undefined>(() => {
+    const [bucketsA, bucketsB] = buckets || [];
+    const reservesA = bucketsA?.reduce((acc, [, , v]) => acc + v, 0);
+    const reservesB = bucketsB?.reduce((acc, [, , v]) => acc + v, 0);
+    return reservesA && reservesB
+      ? reservesA / (reservesA + reservesB)
+      : undefined;
+  }, [buckets]);
+
   return (
     <>
       <div className="orderbook-list__toolbar row p-1 gapx-1">
@@ -551,6 +561,28 @@ export default function OrderBookList({
         </div>
       </div>
       {orderbookDepth}
+      <div className="orderbook-buy-sell-bar row p-3 gap-3">
+        <div className="orderbook-buy-sell-bar_buy-icon col px-2">B</div>
+        {bucketBuyPercent !== undefined && (
+          <>
+            <div className="orderbook-buy-sell-bar_buy-value col">
+              {(100 * bucketBuyPercent).toFixed()}%
+            </div>
+            <div
+              className="orderbook-buy-sell-bar_buy-bar col"
+              style={{ width: `${(100 * bucketBuyPercent).toFixed()}%` }}
+            ></div>
+            <div
+              className="orderbook-buy-sell-bar_sell-bar col"
+              style={{ width: `${(100 - 100 * bucketBuyPercent).toFixed()}%` }}
+            ></div>
+            <div className="orderbook-buy-sell-bar_sell-value col">
+              {(100 - 100 * bucketBuyPercent).toFixed()}%
+            </div>
+          </>
+        )}
+        <div className="orderbook-buy-sell-bar_sell-icon col px-2">S</div>
+      </div>
     </>
   );
 }
