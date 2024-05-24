@@ -83,6 +83,21 @@ interface BlockRangeRequestQuery extends RequestQuery {
 
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
+// helper function to ensure that chart is interactable
+// note: several chart methods such as chart.getVisiblePriceRange() will throw
+//       an exception if the chart exists but is not in a ready state
+//       this method should be able to detect is the chart is not in that state
+function isChartReady(chart: IChartWidgetApi | undefined) {
+  const visibleTimeScaleRange = chart?.getVisibleRange();
+  // skip calculation if timescale is not yet visible
+  // because otherwise a measurement function will throw an exception
+  return (
+    visibleTimeScaleRange &&
+    visibleTimeScaleRange.from > 0 &&
+    visibleTimeScaleRange.to
+  );
+}
+
 export interface ChartPriceAxisInfo extends VisiblePriceRange {
   mode: PriceScaleMode;
   height: number;
@@ -511,8 +526,9 @@ export default function OrderBookChart({
   }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
 
   useEffect(() => {
-    if (chart && priceIndication) {
+    if (priceIndication && chart && isChartReady(chart)) {
       const line = chart
+        // this function will throw an exception if chart is not ready yet
         .createOrderLine()
         .setPrice(priceIndication)
         .setText('')
@@ -529,14 +545,8 @@ export default function OrderBookChart({
     if (chart) {
       const checkChartAxis = () => {
         setPriceAxis?.((chartPriceAxis) => {
-          const visibleTimeScaleRange = chart?.getVisibleRange();
-          // skip calculation if timescale is not yet visible
-          // because otherwise a measurement function will throw an exception
-          if (!visibleTimeScaleRange.from || !visibleTimeScaleRange.to) {
-            return undefined;
-          }
-          const pane = chart?.getPanes()[0];
-          const rightPriceScale = pane?.getMainSourcePriceScale?.();
+          const pane = isChartReady(chart) ? chart?.getPanes()[0] : undefined;
+          const rightPriceScale = pane?.getRightPriceScales?.()?.[0];
           // this function will throw an exception if series is not yet visible
           const visiblePriceRange = rightPriceScale?.getVisiblePriceRange?.();
           const newChartPriceAxis: ChartPriceAxisInfo | undefined =
