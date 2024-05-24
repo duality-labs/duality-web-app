@@ -102,7 +102,7 @@ export default function OrderBookList({
     setShowSellOrders(true);
   }, [setShowSellOrders, setShowBuyOrders]);
 
-  const [bucketsA, bucketsB] = buckets || [];
+  const [bucketsA, bucketsB, height] = buckets || [];
 
   // ensure that a certain amount of liquidity rows are shown in the card
   const [shownTickRows, setShownTickRows] = useState<number>(8);
@@ -119,6 +119,28 @@ export default function OrderBookList({
         : [],
     ];
   }, [bucketsA, bucketsB, showBuyOrders, showSellOrders, shownTickRows]);
+
+  // keep track of buckets by chain height
+  const [pastBuckets, setPastBuckets] = useState<(Buckets | undefined)[]>([]);
+  useEffect(() => {
+    setPastBuckets((pastBuckets) => {
+      const previousBuckets = pastBuckets?.at(0);
+      const previousBucketsHeight = previousBuckets?.[2] || 0;
+      const currentBuckets: Buckets | undefined =
+        filteredBucketsA && filteredBucketsB && height
+          ? [
+              filteredBucketsA.filter((bucket): bucket is Bucket => !!bucket),
+              filteredBucketsB.filter((bucket): bucket is Bucket => !!bucket),
+              height,
+            ]
+          : undefined;
+      const currentBucketsHeight = currentBuckets?.[2] || 0;
+      return currentBuckets && currentBucketsHeight > previousBucketsHeight
+        ? [currentBuckets, previousBuckets]
+        : pastBuckets;
+    });
+  }, [filteredBucketsA, filteredBucketsB, height]);
+  const previousBuckets = pastBuckets?.[1];
 
   // find how numbers should be displayed
   const priceDecimalPlaces = useMemo<number | undefined>(() => {
@@ -308,9 +330,22 @@ export default function OrderBookList({
           {[...filteredBucketsB].reverse().map((bucket, index) => {
             const [minPrice, price, reserves] = bucket || [];
             const lastBucket = bucketsB?.at(-1);
+            // match previous state by outer bounds
+            const previousReserves = previousBuckets?.[1].find((previous) => {
+              return previous[1] === bucket?.[1];
+            })?.[2];
+            const reservesDiff =
+              previousReserves && reserves ? reserves - previousReserves : 0;
             return minPrice && price && reserves && lastBucket ? (
               <OrderbookListRow
                 key={price}
+                className={
+                  previousReserves
+                    ? reservesDiff
+                      ? `reserves-${reservesDiff > 0 ? 'increase' : 'decrease'}`
+                      : undefined
+                    : 'reserves-new'
+                }
                 price={price}
                 reserves={reserves}
                 reserveValueUSD={priceTokenB && reserves * priceTokenB}
@@ -387,9 +422,22 @@ export default function OrderBookList({
           {filteredBucketsA?.map((bucket, index) => {
             const [maxPrice, price, reserves] = bucket || [];
             const lastBucket = bucketsA?.at(-1);
+            // match previous state by outer bounds
+            const previousReserves = previousBuckets?.[1].find((previous) => {
+              return previous[1] === bucket?.[1];
+            })?.[2];
+            const reservesDiff =
+              previousReserves && reserves ? reserves - previousReserves : 0;
             return maxPrice && price && reserves && lastBucket ? (
               <OrderbookListRow
                 key={price}
+                className={
+                  previousReserves
+                    ? reservesDiff
+                      ? `reserves-${reservesDiff > 0 ? 'increase' : 'decrease'}`
+                      : `reserves=${reservesDiff}`
+                    : 'reserves-new'
+                }
                 price={price}
                 reserves={reserves}
                 reserveValueUSD={priceTokenA && reserves * priceTokenA}
@@ -622,6 +670,7 @@ function EmptyRow() {
 }
 
 function OrderbookListRow({
+  className,
   price: bucketPrice,
   reserves,
   reserveValueUSD,
@@ -634,6 +683,7 @@ function OrderbookListRow({
   onHighlight,
   onClick,
 }: {
+  className?: string;
   price: number;
   reserves: number;
   reserveValueUSD?: number;
@@ -665,8 +715,11 @@ function OrderbookListRow({
 
   return (
     <tr
-      key={bucketPrice}
-      className={[active && 'active', hovered && 'hovered']
+      key={formatAmount(bucketPrice, {
+        minimumFractionDigits: priceDecimalPlaces,
+        maximumFractionDigits: priceDecimalPlaces,
+      })}
+      className={[active && 'active', hovered && 'hovered', className]
         .filter(Boolean)
         .join(' ')}
       onMouseEnter={onHoverIn}
@@ -683,7 +736,8 @@ function OrderbookListRow({
           maximumFractionDigits: priceDecimalPlaces,
         })}
       </DiffCell>
-      <td className="text-right text-muted">
+      <td key={reserves} className="relative text-right text-muted">
+        <div className="cell-background absolute filled"></div>
         {formatAmount(reserves ?? '...', {
           minimumFractionDigits: amountDecimalPlaces,
           maximumFractionDigits: amountDecimalPlaces,

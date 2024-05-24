@@ -20,7 +20,7 @@ export type Bucket = [
   outerBound: number,
   displayReserves: number
 ];
-export type Buckets = [bucketsA: Bucket[], bucketsB: Bucket[]];
+export type Buckets = [bucketsA: Bucket[], bucketsB: Bucket[], height: number];
 
 export default function useBucketsByPriceResolution(
   tokenA?: Token,
@@ -29,13 +29,15 @@ export default function useBucketsByPriceResolution(
 ): Buckets | undefined {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
-  const { data: [tokenAReserves, tokenBReserves] = [] } =
+  const { data: [tokenAReserves, tokenBReserves] = [], meta: { height } = {} } =
     useTokenPairMapLiquidity([tokenIdA, tokenIdB]);
 
   // return bucketReserves
   return useMemo((): Buckets | undefined => {
     // return no buckets if the current price is not yet defined
-    if (!tokenA || !tokenB || !currentPrice || !bucketResolution) return;
+    if (!tokenA || !tokenB || !currentPrice || !bucketResolution || !height) {
+      return undefined;
+    }
     // continue
     const resolutionMagnitude = getOrderOfMagnitude(bucketResolution);
     const zero = new BigNumber(0);
@@ -137,13 +139,15 @@ export default function useBucketsByPriceResolution(
           outerBound,
           Number(getDisplayDenomAmount(tokenB, reserves)),
         ]),
+      height,
     ];
   }, [
-    bucketResolution,
-    currentPrice,
-    tokenAReserves,
-    tokenBReserves,
     tokenA,
     tokenB,
+    currentPrice,
+    bucketResolution,
+    tokenAReserves,
+    tokenBReserves,
+    height,
   ]);
 }

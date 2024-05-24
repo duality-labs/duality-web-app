@@ -83,6 +83,9 @@
       color: hsl(1, 66%, 53%);
     }
 
+    .cell-background-gradient {
+      transition: width ease 0.5s;
+    }
     .orderbook-list__table__ticks-top .cell-background-gradient {
       background: linear-gradient(
         90deg,
@@ -158,6 +161,7 @@
   .orderbook-buy-sell-bar_sell-bar {
     border-radius: 0.25rem;
     opacity: 0.5;
+    transition: width 0.5s ease;
   }
   .orderbook-buy-sell-bar_buy-bar {
     background-color: rgb(38, 128, 27);
@@ -165,4 +169,35 @@
   .orderbook-buy-sell-bar_sell-bar {
     background-color: hsl(1, 66%, 40%);
   }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+.reserves-new {
+  animation: appear 0.5s ease;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.reserves-increase .cell-background {
+  animation: flash 0.5s ease;
+  transition: opacity 0.5s ease;
+  background-color: rgb(38, 128, 27);
+  opacity: 0;
+}
+.reserves-decrease .cell-background {
+  animation: flash 0.5s ease;
+  transition: opacity 0.5s ease;
+  background-color: hsl(1, 66%, 40%);
+  opacity: 0;
 }
