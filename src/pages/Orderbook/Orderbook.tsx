@@ -34,8 +34,6 @@ export default function OrderbookPage() {
 
 export type PriceOffset = [price: number, offset?: number];
 export type BucketOffset = [inner: PriceOffset, outer: PriceOffset];
-const connectionMinOpacity = 0.1;
-const connectionMaxOpacity = 0.3;
 
 function Orderbook() {
   // change tokens to match pathname
@@ -146,9 +144,7 @@ function Orderbook() {
                     // outer depth price offset
                     bucketOffset?.[1][1] || 0,
                   ],
-                  (reserves / maxSideReserves) *
-                    (connectionMaxOpacity - connectionMinOpacity) +
-                    connectionMinOpacity,
+                  reserves / maxSideReserves,
                   '#26801bFF',
                 ];
               }
@@ -177,9 +173,7 @@ function Orderbook() {
                     // outer depth price offset
                     bucketOffset?.[1][1] || 0,
                   ],
-                  ((reserves * currentPrice) / maxSideReserves) *
-                    (connectionMaxOpacity - connectionMinOpacity) +
-                    connectionMinOpacity,
+                  (reserves * currentPrice) / maxSideReserves,
                   '#d6363aff',
                 ];
               }

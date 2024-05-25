@@ -16,6 +16,8 @@ export type ChartArea = [
   weight: number,
   fillColor?: string | CanvasGradient | CanvasPattern
 ];
+const connectionMinOpacity = 0.1;
+const connectionMaxOpacity = 0.3;
 
 export default function OrderbookChartConnector({
   connectionLines,
@@ -109,11 +111,14 @@ export default function OrderbookChartConnector({
         connectionArea: ConnectionArea
       ) {
         const [[y1, y2], [y3, y4], weight, fill = 'white'] = connectionArea;
+        const adjustedWeight =
+          weight * (connectionMaxOpacity - connectionMinOpacity) +
+          connectionMinOpacity;
         // skip areas with no defined points
         if (!y1 || !y2 || !y3 || !y4) return;
         ctx.lineJoin = 'round';
         ctx.fillStyle = fill;
-        ctx.filter = `opacity(${weight})`;
+        ctx.filter = `opacity(${adjustedWeight})`;
         ctx.beginPath();
         // draw top line
         ctx.moveTo(connectionCurve[0], y1);
