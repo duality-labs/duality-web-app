@@ -15,6 +15,9 @@ import { useToken } from './useDenomClients';
 export type ReserveDataRow = [tickIndex: number, reserves: number];
 type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 
+function removeZeroLiquidityValues([, data]: ReserveDataRow) {
+  return data === 0;
+}
 // add convenience method to fetch liquidity maps of a pair
 export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   TokenID?,
@@ -30,7 +33,7 @@ export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
     encodedA && encodedB && `/liquidity/pair/${encodedA}/${encodedB}`,
     {
       // remove entries of value 0 from the accumulated map, they are not used
-      mapEntryRemovalValue: 0,
+      removeEntryMatch: removeZeroLiquidityValues,
     }
   );
 }

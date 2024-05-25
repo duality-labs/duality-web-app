@@ -39,10 +39,10 @@ interface StreamOptions {
   // allow SSE requests to be disabled (they are slower to start)
   disableSSE?: boolean;
 }
-interface AccumulatorOptions {
+interface AccumulatorOptions<DataRow extends BaseDataRow> {
   // optional value to remove from accumulator maps
   // (0 values should be removed from liquidity maps)
-  mapEntryRemovalValue?: 0;
+  removeEntryMatch?: (dataRow: DataRow) => boolean;
   // optional initial setting of the accumulateUpdates function
   accumulateUpdates?: typeof accumulateUpdatesUsingMutation;
 }
@@ -266,7 +266,11 @@ export class IndexerStream<DataRow = BaseDataRow> {
 function accumulateUpdatesToNewState<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
->(currentMap: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
+>(
+  currentMap: DataSet,
+  dataUpdates: DataRow[],
+  opts: AccumulatorOptions<DataRow>
+) {
   // create new map: this will allow React hooks to function as expected,
   // each new update returns a new Map object (not the same but mutated object)
   const newMap = new Map(currentMap) as DataSet;
@@ -278,13 +282,14 @@ function accumulateUpdatesToNewState<
 function accumulateUpdatesUsingMutation<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
->(map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
+>(map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions<DataRow>) {
   // add data updates to current map
   // note: if you received an error about here you might be using the incorrect
   //       indexer class (single/dual datasets) required for the endpoint
-  for (const [id, data] of dataUpdates) {
+  for (const dataUpdate of dataUpdates) {
+    const [id, data] = dataUpdate;
     // remove keys if the data is defined as "empty"
-    if (opts.mapEntryRemovalValue === data) {
+    if (opts.removeEntryMatch?.(dataUpdate)) {
       map.delete(id);
     } else {
       map.set(id, data);
@@ -297,7 +302,7 @@ function accumulateUpdatesUsingMutation<
 function accumulateLastUpdateOnlyToNewState<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
->(_map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
+>(_map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions<DataRow>) {
   // add data updates to a new map (ignore previous state)
   const newMap = new Map() as DataSet;
   return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
@@ -323,7 +328,7 @@ export class IndexerStreamAccumulateSingleDataSet<
   constructor(
     relativeURL: URL | string,
     callbacks: StreamSingleDataSetCallbacks<DataRow>,
-    opts?: AccumulatorOptions & StreamOptions
+    opts?: AccumulatorOptions<DataRow> & StreamOptions
   ) {
     this.stream = new IndexerStream<DataRow>(
       relativeURL,
@@ -333,7 +338,7 @@ export class IndexerStreamAccumulateSingleDataSet<
           // update accumulated dataSet
           this.dataHeight = dataHeight;
           this.dataSet = this.accumulateDataSet(update, {
-            mapEntryRemovalValue: opts?.mapEntryRemovalValue,
+            removeEntryMatch: opts?.removeEntryMatch,
           });
           // send updated dataSet to listener
           callbacks.onAccumulated?.(this.dataSet, this.dataHeight, update);
@@ -352,7 +357,7 @@ export class IndexerStreamAccumulateSingleDataSet<
   // abstracted method to update saved dataSet
   private accumulateDataSet = (
     dataUpdates: DataRow[],
-    opts: AccumulatorOptions = {}
+    opts: AccumulatorOptions<DataRow> = {}
   ) => {
     // save set to class instance and return
     this.dataSet = this.accumulateUpdates(this.dataSet, dataUpdates, opts);
@@ -396,7 +401,7 @@ export class IndexerStreamAccumulateDualDataSet<
   constructor(
     relativeURL: URL | string,
     callbacks: StreamDualDataSetCallbacks<DataRow>,
-    opts?: AccumulatorOptions & StreamOptions
+    opts?: AccumulatorOptions<DataRow> & StreamOptions
   ) {
     this.stream = new IndexerStream<DataRow[]>(
       relativeURL,
@@ -406,7 +411,7 @@ export class IndexerStreamAccumulateDualDataSet<
           // update accumulated dataSet
           this.dataHeight = dataHeight;
           this.dataSets = this.accumulateDataSet(update, {
-            mapEntryRemovalValue: opts?.mapEntryRemovalValue,
+            removeEntryMatch: opts?.removeEntryMatch,
           });
           // send updated dataSet to listener
           callbacks.onAccumulated?.(this.dataSets, this.dataHeight, update);
@@ -425,7 +430,7 @@ export class IndexerStreamAccumulateDualDataSet<
   // abstracted method to update saved dataSet
   private accumulateDataSet = (
     dataUpdates: DataRow[][],
-    opts: AccumulatorOptions = {}
+    opts: AccumulatorOptions<DataRow> = {}
   ) => {
     // save sets to class instance and return
     this.dataSets = [
@@ -464,7 +469,7 @@ function useIndexerStream<
 >(
   url: URL | string | undefined,
   IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
-  opts?: AccumulatorOptions
+  opts?: AccumulatorOptions<DataRow>
 ): StaleWhileRevalidateStreamState<DataRow, DataSet>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
@@ -472,7 +477,7 @@ function useIndexerStream<
 >(
   url: URL | string | undefined,
   IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
-  opts?: AccumulatorOptions
+  opts?: AccumulatorOptions<DataRow>
 ): StaleWhileRevalidateStreamState<DataRow[], DataSet[]>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
@@ -482,7 +487,7 @@ function useIndexerStream<
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
     | typeof IndexerStreamAccumulateDualDataSet,
-  opts?: AccumulatorOptions
+  opts?: AccumulatorOptions<DataRow>
 ): StaleWhileRevalidateStreamState<DataRow | DataRow[], DataSet | DataSet[]> {
   // define subscription callback which may or may not be used in this component
   // it is passed to useSWRSubscription to handle if the subscription should be
@@ -549,7 +554,7 @@ function useIndexerStream<
 export function useIndexerStreamOfSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
->(url: URL | string | undefined, opts?: AccumulatorOptions) {
+>(url: URL | string | undefined, opts?: AccumulatorOptions<DataRow>) {
   return useIndexerStream<DataRow, DataSet>(
     url,
     IndexerStreamAccumulateSingleDataSet,
@@ -561,7 +566,7 @@ export function useIndexerStreamOfSingleDataSet<
 export function useIndexerStreamOfDualDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
->(url: URL | string | undefined, opts?: AccumulatorOptions) {
+>(url: URL | string | undefined, opts?: AccumulatorOptions<DataRow>) {
   return useIndexerStream<DataRow, DataSet>(
     url,
     IndexerStreamAccumulateDualDataSet,
@@ -577,7 +582,7 @@ function useIndexerStreamLastUpdate<
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
     | typeof IndexerStreamAccumulateDualDataSet,
-  opts?: AccumulatorOptions
+  opts?: AccumulatorOptions<DataRow>
 ): StaleWhileRevalidateStreamState<
   DataRow | [DataRow, DataRow],
   DataSet | [DataSet, DataSet]
@@ -599,7 +604,7 @@ export function useIndexerStreamLastUpdateOfSingleDataSet<
   DataSet = BaseDataSet<DataRow>
 >(
   url: URL | string | undefined,
-  opts?: AccumulatorOptions
+  opts?: AccumulatorOptions<DataRow>
 ): StaleWhileRevalidateStreamState<DataRow, DataSet> {
   // return cached subscription data
   return useIndexerStreamLastUpdate<DataRow, DataSet>(
@@ -616,7 +621,7 @@ export function useIndexerStreamLastUpdateOfDualDataSet<
   DataSet = BaseDataSet<DataRow>
 >(
   url: URL | string | undefined,
-  opts?: AccumulatorOptions
+  opts?: AccumulatorOptions<DataRow>
 ): StaleWhileRevalidateStreamState<[DataRow, DataRow], [DataSet, DataSet]> {
   // return cached subscription data
   return useIndexerStreamLastUpdate<DataRow, DataSet>(
@@ -633,19 +638,19 @@ export function useIndexerStreamLastUpdateOfDualDataSet<
 async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ): Promise<BaseDataSet<DataRow>>;
 async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ): Promise<BaseDataSet<DataRow>[]>;
 async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
     | typeof IndexerStreamAccumulateDualDataSet,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ): Promise<BaseDataSet<DataRow> | BaseDataSet<DataRow>[]> {
   return new Promise((resolve, reject) => {
     const url = new URL(baseURL, REACT_APP__INDEXER_API);
@@ -678,21 +683,21 @@ async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
 
 export function fetchSingleDataSetFromIndexer<DataRow extends BaseDataRow>(
   url: URL | string,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ): Promise<BaseDataSet<DataRow>> {
   return fetchDataFromIndexer(url, IndexerStreamAccumulateSingleDataSet, opts);
 }
 
 export function fetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
   url: URL | string,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ): Promise<BaseDataSet<DataRow>[]> {
   return fetchDataFromIndexer(url, IndexerStreamAccumulateDualDataSet, opts);
 }
 
 export function useFetchSingleDataSetFromIndexer<DataRow extends BaseDataRow>(
   url: URL | string,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ) {
   return useSWR([url.toString(), opts, 'fetch'], () =>
     fetchSingleDataSetFromIndexer<DataRow>(url, opts)
@@ -701,7 +706,7 @@ export function useFetchSingleDataSetFromIndexer<DataRow extends BaseDataRow>(
 
 export function useFetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
   url: URL | string,
-  opts?: AccumulatorOptions & StreamOptions
+  opts?: AccumulatorOptions<DataRow> & StreamOptions
 ) {
   return useSWR([url.toString(), opts, 'fetch'], () =>
     fetchDualDataSetFromIndexer<DataRow>(url, opts)
