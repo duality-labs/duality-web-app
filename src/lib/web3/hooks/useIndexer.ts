@@ -404,7 +404,7 @@ export class IndexerStreamAccumulateSingleDataSet<
   }
 }
 
-interface StreamDualDataSetCallbacks<
+interface StreamMultipleDataSetsCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > extends Omit<StreamCallbacks<DataRow>, 'onUpdate' | 'onCompleted'> {
@@ -419,20 +419,32 @@ interface StreamDualDataSetCallbacks<
     update: DataRow[][]
   ) => void;
 }
-export class IndexerStreamAccumulateDualDataSet<
+export class IndexerStreamAccumulateMultipleDataSets<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > {
   // store data in class instance
-  private dataSets: DataSet[] = [new Map(), new Map()] as DataSet[];
+  private dataSets: DataSet[] = [];
   private dataHeight = 0;
   private stream?: IndexerStream<DataRow[]>;
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamDualDataSetCallbacks<DataRow>,
-    opts?: AccumulatorOptions<DataRow> & StreamOptions
+    callbacks: StreamMultipleDataSetsCallbacks<DataRow>,
+    opts: AccumulatorOptions<DataRow> &
+      StreamOptions & {
+        // enforce knowing the number of data sets: and it should be above 1
+        dataSetCount: number;
+      }
   ) {
+    const dataSetCount = opts?.dataSetCount || 1;
+    // ensure the instance has multiple data sets
+    if (dataSetCount < 2) {
+      throw new Error('Use a single dataset accumulator for a single dataset');
+    }
+    this.dataSets = Array.from({ length: dataSetCount }).map<DataSet>(
+      () => new Map() as DataSet
+    );
     this.stream = new IndexerStream<DataRow[]>(
       relativeURL,
       {
@@ -441,7 +453,7 @@ export class IndexerStreamAccumulateDualDataSet<
           // update accumulated dataSet
           this.dataHeight = dataHeight;
           this.dataSets = this.accumulateDataSet(update, {
-            dataSetCount: 2,
+            dataSetCount,
             separateUpdates: opts?.separateUpdates,
             removeEntryMatch: opts?.removeEntryMatch,
           });
@@ -476,6 +488,19 @@ export class IndexerStreamAccumulateDualDataSet<
   unsubscribe() {
     // abort any current requests
     this.stream?.unsubscribe();
+  }
+}
+
+export class IndexerStreamAccumulateDualDataSet<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+> extends IndexerStreamAccumulateMultipleDataSets<DataRow, DataSet> {
+  constructor(
+    relativeURL: URL | string,
+    callbacks: StreamMultipleDataSetsCallbacks<DataRow>,
+    opts?: Omit<AccumulatorOptions<DataRow> & StreamOptions, 'dataSetCount'>
+  ) {
+    super(relativeURL, callbacks, { ...opts, dataSetCount: 2 });
   }
 }
 
