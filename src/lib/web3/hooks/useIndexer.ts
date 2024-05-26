@@ -25,9 +25,9 @@ export type IndexerPage<DataRow = BaseDataRow> = {
   };
 };
 
-interface StreamCallbacks<DataRow = BaseDataRow> {
+interface StreamCallbacks<DataUpdate> {
   // onUpdate returns individual update chunks
-  onUpdate?: (dataUpdates: DataRow[], height: number) => void;
+  onUpdate?: (dataUpdates: DataUpdate[], height: number) => void;
   // onCompleted indicates when the data stream is finished
   onCompleted?: () => void;
   // allow errors to be seen and handled
@@ -40,19 +40,21 @@ interface StreamOptions {
   disableSSE?: boolean;
 }
 interface AccumulatorOptions<DataRow extends BaseDataRow> {
+  dataSetCount?: number;
+  separateUpdates?: (dataUpdate: DataRow[][]) => DataRow[][];
   // optional value to remove from accumulator maps
   // (0 values should be removed from liquidity maps)
   removeEntryMatch?: (dataRow: DataRow) => boolean;
   // optional initial setting of the accumulateUpdates function
   accumulateUpdates?: typeof accumulateUpdatesUsingMutation;
 }
-export class IndexerStream<DataRow = BaseDataRow> {
+export class IndexerStream<DataUpdate extends BaseDataRow | BaseDataRow[]> {
   // use single AbortController for all the requests
   private abortController = new AbortController();
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamCallbacks<DataRow>,
+    callbacks: StreamCallbacks<DataUpdate>,
     opts?: StreamOptions
   ) {
     // replace abortController if one is given
@@ -82,7 +84,10 @@ export class IndexerStream<DataRow = BaseDataRow> {
       });
   }
 
-  private async subscribeToSSE(url: URL, callbacks: StreamCallbacks<DataRow>) {
+  private async subscribeToSSE(
+    url: URL,
+    callbacks: StreamCallbacks<DataUpdate>
+  ) {
     return await new Promise<void>((resolve, reject) => {
       // create cancellable SSE event source
       const listenerOptions = { signal: this.abortController.signal };
@@ -98,10 +103,10 @@ export class IndexerStream<DataRow = BaseDataRow> {
         eventSource.addEventListener(
           'update',
           (e: MessageEvent<string>) => {
-            let dataUpdates: DataRow[] | undefined;
+            let dataUpdates: DataUpdate[] | undefined;
             if (e.data) {
               try {
-                dataUpdates = JSON.parse(e.data) as DataRow[];
+                dataUpdates = JSON.parse(e.data) as DataUpdate[];
               } catch (err) {
                 reject(
                   new Error(`Could not parse data: ${e.data}`, {
@@ -163,7 +168,7 @@ export class IndexerStream<DataRow = BaseDataRow> {
   maxRetries = 5;
   private async subscribeToLongPolling(
     url: URL,
-    callbacks: StreamCallbacks<DataRow>
+    callbacks: StreamCallbacks<DataUpdate>
   ) {
     // create cancellable long-polling fetch options
     const fetchOptions = { signal: this.abortController.signal };
@@ -205,7 +210,7 @@ export class IndexerStream<DataRow = BaseDataRow> {
               data = [],
               pagination = {},
               block_range: range,
-            } = (await response.json()) as IndexerPage<DataRow>;
+            } = (await response.json()) as IndexerPage<DataUpdate>;
             // send update directly to listener
             callbacks.onUpdate?.(data, Number(range?.to_height));
             // set known height for next request
@@ -265,47 +270,71 @@ export class IndexerStream<DataRow = BaseDataRow> {
 // each data update as a new object (breaking referential-equality comparision)
 function accumulateUpdatesToNewState<
   DataRow extends BaseDataRow,
-  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>,
+  DataUpdate = DataRow | DataRow[]
 >(
-  currentMap: DataSet,
-  dataUpdates: DataRow[],
+  currentMaps: DataSet[],
+  dataUpdates: DataUpdate[],
   opts: AccumulatorOptions<DataRow>
 ) {
   // create new map: this will allow React hooks to function as expected,
   // each new update returns a new Map object (not the same but mutated object)
-  const newMap = new Map(currentMap) as DataSet;
+  const newMaps = currentMaps.map((map) => new Map(map) as DataSet);
   // add data updates to new map
-  return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
+  return accumulateUpdatesUsingMutation(newMaps, dataUpdates, opts);
 }
 
 // accumulation function that may be quicker than using non-mutation (for React)
 function accumulateUpdatesUsingMutation<
   DataRow extends BaseDataRow,
-  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
->(map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions<DataRow>) {
-  // add data updates to current map
-  // note: if you received an error about here you might be using the incorrect
-  //       indexer class (single/dual datasets) required for the endpoint
-  for (const dataUpdate of dataUpdates) {
-    const [id, data] = dataUpdate;
-    // remove keys if the data is defined as "empty"
-    if (opts.removeEntryMatch?.(dataUpdate)) {
-      map.delete(id);
-    } else {
-      map.set(id, data);
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>,
+  DataUpdate = DataRow | DataRow[]
+>(
+  currentMaps: DataSet[],
+  dataUpdates: DataUpdate[],
+  opts: AccumulatorOptions<DataRow>
+) {
+  // add data updates to current maps
+  // take possible DataRow[] | DataRow[][] input and normalize to DataRow[][]
+  // so that the can work with a standard array of DataSets in every case
+  const dataUpdatesForEachSet =
+    opts.dataSetCount && opts.dataSetCount > 1
+      ? opts.separateUpdates?.(dataUpdates as DataRow[][]) ||
+        (dataUpdates as DataRow[][])
+      : [dataUpdates as unknown as DataRow[]];
+  for (let i = 0; i < dataUpdatesForEachSet.length; i++) {
+    const map = currentMaps[i];
+    const dataUpdates = dataUpdatesForEachSet[i];
+    if (map && dataUpdates) {
+      for (const dataUpdate of dataUpdates) {
+        const [id, data] = dataUpdate;
+        // remove keys if the data is defined as "empty"
+        if (opts.removeEntryMatch?.(dataUpdate)) {
+          map.delete(id);
+        } else {
+          map.set(id, data);
+        }
+      }
     }
   }
-  return map;
+  return currentMaps;
 }
 
 // accumulation function that disregards state and returns only the last update
 function accumulateLastUpdateOnlyToNewState<
   DataRow extends BaseDataRow,
-  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
->(_map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions<DataRow>) {
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>,
+  DataUpdate = DataRow | DataRow[]
+>(
+  _currentMaps: DataSet[],
+  dataUpdates: DataUpdate[],
+  opts: AccumulatorOptions<DataRow>
+) {
   // add data updates to a new map (ignore previous state)
-  const newMap = new Map() as DataSet;
-  return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
+  const newMaps = Array.from({ length: opts?.dataSetCount || 1 }).map<DataSet>(
+    () => new Map() as DataSet
+  );
+  return accumulateUpdatesUsingMutation(newMaps, dataUpdates, opts);
 }
 
 interface StreamSingleDataSetCallbacks<
@@ -321,6 +350,7 @@ export class IndexerStreamAccumulateSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > {
+  // store data in class instance
   private dataSet: DataSet = new Map() as DataSet;
   private dataHeight = 0;
   private stream?: IndexerStream<DataRow>;
@@ -360,7 +390,7 @@ export class IndexerStreamAccumulateSingleDataSet<
     opts: AccumulatorOptions<DataRow> = {}
   ) => {
     // save set to class instance and return
-    this.dataSet = this.accumulateUpdates(this.dataSet, dataUpdates, opts);
+    this.dataSet = this.accumulateUpdates([this.dataSet], dataUpdates, opts)[0];
     return this.dataSet;
   };
 
@@ -411,6 +441,8 @@ export class IndexerStreamAccumulateDualDataSet<
           // update accumulated dataSet
           this.dataHeight = dataHeight;
           this.dataSets = this.accumulateDataSet(update, {
+            dataSetCount: 2,
+            separateUpdates: opts?.separateUpdates,
             removeEntryMatch: opts?.removeEntryMatch,
           });
           // send updated dataSet to listener
@@ -433,10 +465,7 @@ export class IndexerStreamAccumulateDualDataSet<
     opts: AccumulatorOptions<DataRow> = {}
   ) => {
     // save sets to class instance and return
-    this.dataSets = [
-      this.accumulateUpdates(this.dataSets[0], dataUpdates[0] || [], opts),
-      this.accumulateUpdates(this.dataSets[1], dataUpdates[1] || [], opts),
-    ];
+    this.dataSets = this.accumulateUpdates(this.dataSets, dataUpdates, opts);
     return this.dataSets;
   };
 
@@ -505,10 +534,10 @@ function useIndexerStream<
       url,
       {
         // note: dataSet may be empty on return of an initial "no rows" payload
-        onAccumulated: (dataSet, height, update) => {
+        onAccumulated: (dataSetOrSets, height, update) => {
           next(null, [
             // note: the TypeScript here is a bit hacky but this should be ok
-            dataSet as unknown as DataSet | DataSet[],
+            dataSetOrSets as DataSet | DataSet[],
             {
               height,
               update: update as unknown as (DataRow | DataRow[])[],
