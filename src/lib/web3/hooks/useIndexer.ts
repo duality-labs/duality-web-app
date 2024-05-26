@@ -44,7 +44,7 @@ interface AccumulatorOptions {
   // (0 values should be removed from liquidity maps)
   mapEntryRemovalValue?: 0;
   // optional initial setting of the accumulateUpdates function
-  accumulateUpdates?: typeof accumulateUpdates;
+  accumulateUpdates?: typeof accumulateUpdatesUsingMutation;
 }
 export class IndexerStream<DataRow = BaseDataRow> {
   // use single AbortController for all the requests
@@ -261,8 +261,9 @@ export class IndexerStream<DataRow = BaseDataRow> {
   }
 }
 
-// abstraction of accumulatation update function that can be replaced if needed
-function accumulateUpdates<
+// accumulation function that can be used to allow React to "react" to
+// each data update as a new object (breaking referential-equality comparision)
+function accumulateUpdatesToNewState<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(currentMap: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
@@ -293,7 +294,7 @@ function accumulateUpdatesUsingMutation<
 }
 
 // accumulation function that disregards state and returns only the last update
-function accumulateLastUpdateOnly<
+function accumulateLastUpdateOnlyToNewState<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(_map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
@@ -353,11 +354,13 @@ export class IndexerStreamAccumulateSingleDataSet<
     dataUpdates: DataRow[],
     opts: AccumulatorOptions = {}
   ) => {
-    return this.accumulateUpdates(this.dataSet, dataUpdates, opts);
+    // save set to class instance and return
+    this.dataSet = this.accumulateUpdates(this.dataSet, dataUpdates, opts);
+    return this.dataSet;
   };
 
   // add default accumulation function, but allow it to be replaced if needed
-  public accumulateUpdates = accumulateUpdates;
+  public accumulateUpdates = accumulateUpdatesUsingMutation;
 
   // call to unsubscribe from any data stream
   unsubscribe() {
@@ -420,7 +423,7 @@ export class IndexerStreamAccumulateDualDataSet<
     dataUpdates: DataRow[][],
     opts: AccumulatorOptions = {}
   ) => {
-    // create new objects (to escape React referential-equality comparision)
+    // save sets to class instance and return
     this.dataSets = [
       this.accumulateUpdates(this.dataSets[0], dataUpdates[0] || [], opts),
       this.accumulateUpdates(this.dataSets[1], dataUpdates[1] || [], opts),
@@ -429,7 +432,7 @@ export class IndexerStreamAccumulateDualDataSet<
   };
 
   // add default accumulation function, but allow it to be replaced if needed
-  public accumulateUpdates = accumulateUpdates;
+  public accumulateUpdates = accumulateUpdatesUsingMutation;
 
   // call to unsubscribe from any data stream
   unsubscribe() {
@@ -499,9 +502,9 @@ function useIndexerStream<
       // so this has been restricted through types
       opts
     );
-    if (opts?.accumulateUpdates) {
-      stream.accumulateUpdates = opts.accumulateUpdates;
-    }
+    // allow custom accumulator but default to React-friendly accumulator
+    stream.accumulateUpdates =
+      opts?.accumulateUpdates || accumulateUpdatesToNewState;
     return () => stream.unsubscribe();
   };
 
@@ -564,7 +567,7 @@ function useIndexerStreamLastUpdate<
       ? useIndexerStreamOfDualDataSet
       : useIndexerStreamOfSingleDataSet;
   return hook<DataRow, DataSet>(url, {
-    accumulateUpdates: accumulateLastUpdateOnly,
+    accumulateUpdates: accumulateLastUpdateOnlyToNewState,
     ...opts,
   });
 }
@@ -582,7 +585,7 @@ export function useIndexerStreamLastUpdateOfSingleDataSet<
     url,
     IndexerStreamAccumulateSingleDataSet,
     {
-      accumulateUpdates: accumulateLastUpdateOnly,
+      accumulateUpdates: accumulateLastUpdateOnlyToNewState,
       ...opts,
     }
   ) as StaleWhileRevalidateStreamState<DataSet>;
@@ -599,7 +602,7 @@ export function useIndexerStreamLastUpdateOfDualDataSet<
     url,
     IndexerStreamAccumulateDualDataSet,
     {
-      accumulateUpdates: accumulateLastUpdateOnly,
+      accumulateUpdates: accumulateLastUpdateOnlyToNewState,
       ...opts,
     }
   ) as StaleWhileRevalidateStreamState<[DataSet, DataSet]>;
