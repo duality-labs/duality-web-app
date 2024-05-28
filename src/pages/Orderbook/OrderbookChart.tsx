@@ -21,6 +21,7 @@ import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import {
+  BaseTimeSeriesSSERow,
   IndexerPage,
   IndexerStreamAccumulateSingleDataSet,
 } from '../../lib/web3/hooks/useIndexer';
@@ -62,6 +63,13 @@ interface BlockRangeRequestQuery extends RequestQuery {
   // custom query parameters
   'block_range.from_height'?: string; // integer
   'block_range.to_height'?: string; // integer
+}
+
+interface TimeSeriesPriceDataSSERow extends BaseTimeSeriesSSERow {
+  high: string;
+  low: string;
+  open: string;
+  close: string;
 }
 
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
@@ -144,7 +152,7 @@ export default function OrderBookChart({
     const knownHeights: Map<FetchID, number> = new Map();
     const streams: Map<
       SubscriberUUID,
-      IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>
+      IndexerStreamAccumulateSingleDataSet<TimeSeriesPriceDataSSERow>
     > = new Map();
 
     const getFetchID = (
@@ -276,105 +284,106 @@ export default function OrderBookChart({
             'pagination.after': periodParams.from?.toFixed(0),
           });
 
-          const stream =
-            new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
-              url,
-              {
-                onCompleted: async (data, height) => {
-                  stream.unsubscribe();
-                  if (height > (knownHeights.get(fetchID) ?? 0)) {
-                    knownHeights.set(fetchID, height);
-                  }
-                  const resolutionInMs = resolutionInMsMap[resolution];
-                  const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
-                    (acc, data) => {
-                      const bar = getBarFromTimeSeriesRow(data);
-                      // fill in any gaps with the last close price
-                      const lastBar = acc[acc.length - 1];
-                      const extraBars: Bar[] = [];
-                      if (lastBar && resolutionInMs) {
-                        let lastTimestamp = lastBar.time;
-                        while (lastTimestamp + resolutionInMs < bar.time) {
-                          lastTimestamp += resolutionInMs;
-                          extraBars.push({
-                            time: lastTimestamp,
-                            open: lastBar.close,
-                            high: lastBar.close,
-                            low: lastBar.close,
-                            close: lastBar.close,
-                          });
-                        }
+          const stream = new IndexerStreamAccumulateSingleDataSet<
+            TimeSeriesPriceDataSSERow,
+            Map<TimeSeriesRow[0], TimeSeriesRow[1]>
+          >(
+            url,
+            {
+              onCompleted: async (data, height) => {
+                stream.unsubscribe();
+                if (height > (knownHeights.get(fetchID) ?? 0)) {
+                  knownHeights.set(fetchID, height);
+                }
+                const resolutionInMs = resolutionInMsMap[resolution];
+                const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
+                  (acc, data) => {
+                    const bar = getBarFromTimeSeriesRow(data);
+                    // fill in any gaps with the last close price
+                    const lastBar = acc[acc.length - 1];
+                    const extraBars: Bar[] = [];
+                    if (lastBar && resolutionInMs) {
+                      let lastTimestamp = lastBar.time;
+                      while (lastTimestamp + resolutionInMs < bar.time) {
+                        lastTimestamp += resolutionInMs;
+                        extraBars.push({
+                          time: lastTimestamp,
+                          open: lastBar.close,
+                          high: lastBar.close,
+                          low: lastBar.close,
+                          close: lastBar.close,
+                        });
                       }
-                      return [...acc, ...extraBars, bar];
-                    },
-                    []
-                  );
-                  // fill in any gaps (between pages) to the earliest known bars
-                  const previousBar = firstBars.get(fetchID);
-                  const currentLastBar = bars.at(-1);
-                  if (previousBar && currentLastBar) {
-                    let lastTimestamp = currentLastBar.time;
-                    while (lastTimestamp + resolutionInMs < previousBar.time) {
-                      lastTimestamp += resolutionInMs;
-                      bars.push({
-                        time: lastTimestamp,
-                        open: currentLastBar.close,
-                        high: currentLastBar.close,
-                        low: currentLastBar.close,
-                        close: currentLastBar.close,
-                      });
                     }
-                  }
-                  // record earliest bar info of this fetch
-                  const firstBar = bars.at(0);
-                  if (
-                    firstBar &&
-                    firstBar.time > (firstBars.get(fetchID)?.time ?? 0)
-                  ) {
-                    firstBars.set(fetchID, firstBar);
-                  }
-                  // record most recent bar info of this fetch
-                  const lastBar = bars.at(-1);
-                  if (
-                    lastBar &&
-                    lastBar.time > (lastBars.get(fetchID)?.time ?? 0)
-                  ) {
-                    lastBars.set(fetchID, lastBar);
-                  }
-                  // if no bars were received: determine if there are other bars
-                  // that can be fetched in a subsequent query
-                  if (!bars.length) {
-                    const previousDataURL = getFetchURL(
-                      tokenIdA,
-                      tokenIdB,
-                      resolution,
-                      {
-                        'pagination.before': periodParams.from?.toFixed(0),
-                        'pagination.limit': '1',
-                      }
-                    );
-                    const previousData: IndexerPage<TimeSeriesRow> =
-                      await fetch(previousDataURL).then((response) =>
-                        response.json()
-                      );
-                    const previousUnixTimestamp = previousData.data[0]?.[0];
-                    // inform the chart that there is more data starting at this
-                    // next timestamp (or not): it will adjust the next query
-                    return onHistoryCallback(bars, {
-                      noData: !previousUnixTimestamp,
-                      nextTime: previousUnixTimestamp || null,
+                    return [...acc, ...extraBars, bar];
+                  },
+                  []
+                );
+                // fill in any gaps (between pages) to the earliest known bars
+                const previousBar = firstBars.get(fetchID);
+                const currentLastBar = bars.at(-1);
+                if (previousBar && currentLastBar) {
+                  let lastTimestamp = currentLastBar.time;
+                  while (lastTimestamp + resolutionInMs < previousBar.time) {
+                    lastTimestamp += resolutionInMs;
+                    bars.push({
+                      time: lastTimestamp,
+                      open: currentLastBar.close,
+                      high: currentLastBar.close,
+                      low: currentLastBar.close,
+                      close: currentLastBar.close,
                     });
                   }
-                  onHistoryCallback(bars);
-                },
-                onError: (e) => {
-                  onErrorCallback(
-                    (e as Error)?.message || 'Unknown error occurred'
+                }
+                // record earliest bar info of this fetch
+                const firstBar = bars.at(0);
+                if (
+                  firstBar &&
+                  firstBar.time > (firstBars.get(fetchID)?.time ?? 0)
+                ) {
+                  firstBars.set(fetchID, firstBar);
+                }
+                // record most recent bar info of this fetch
+                const lastBar = bars.at(-1);
+                if (
+                  lastBar &&
+                  lastBar.time > (lastBars.get(fetchID)?.time ?? 0)
+                ) {
+                  lastBars.set(fetchID, lastBar);
+                }
+                // if no bars were received: determine if there are other bars
+                // that can be fetched in a subsequent query
+                if (!bars.length) {
+                  const previousDataURL = getFetchURL(
+                    tokenIdA,
+                    tokenIdB,
+                    resolution,
+                    {
+                      'pagination.before': periodParams.from?.toFixed(0),
+                      'pagination.limit': '1',
+                    }
                   );
-                },
+                  const previousData: IndexerPage<TimeSeriesRow> = await fetch(
+                    `${REACT_APP__INDEXER_API}${previousDataURL}`
+                  ).then((response) => response.json());
+                  const previousUnixTimestamp = previousData.data[0]?.[0];
+                  // inform the chart that there is more data starting at this
+                  // next timestamp (or not): it will adjust the next query
+                  return onHistoryCallback(bars, {
+                    noData: !previousUnixTimestamp,
+                    nextTime: previousUnixTimestamp || null,
+                  });
+                }
+                onHistoryCallback(bars);
               },
-              { disableSSE: true }
-            );
+              onError: (e) => {
+                onErrorCallback(
+                  (e as Error)?.message || 'Unknown error occurred'
+                );
+              },
+            },
+            { disableSSE: true }
+          );
           streams.set(fetchID, stream);
         },
         subscribeBars: (
@@ -389,16 +398,29 @@ export default function OrderBookChart({
             'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
           });
 
-          const stream =
-            new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
+          const stream = new IndexerStreamAccumulateSingleDataSet<
+            TimeSeriesPriceDataSSERow,
+            Map<TimeSeriesRow[0], TimeSeriesRow[1]>
+          >(
+            url,
+            {
               onUpdate: (dataUpdates) => {
                 let lastBar = lastBars.get(fetchID);
                 const resolutionInMs = resolutionInMsMap[resolution];
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
-                const chronologicalUpdates = dataUpdates.reverse();
+                const chronologicalUpdates = dataUpdates.slice().reverse();
                 for (const row of chronologicalUpdates) {
-                  const bar = getBarFromTimeSeriesRow(row);
+                  const dataUpdate: TimeSeriesRow = [
+                    row.block_tmstmp,
+                    [
+                      Number(row.open),
+                      Number(row.high),
+                      Number(row.low),
+                      Number(row.close),
+                    ],
+                  ];
+                  const bar = getBarFromTimeSeriesRow(dataUpdate);
                   // add extra empty bars if there would be a gap in time
                   if (lastBar && resolutionInMs) {
                     let lastTimestamp = lastBar.time;
@@ -429,7 +451,17 @@ export default function OrderBookChart({
                 // eslint-disable-next-line no-console
                 console.error('SSE error', e);
               },
-            });
+            },
+            {
+              getDataUpdateKey: (dataRow) => dataRow.block_tmstmp,
+              getDataUpdateValue: (dataRow) => [
+                Number(dataRow.open),
+                Number(dataRow.high),
+                Number(dataRow.low),
+                Number(dataRow.close),
+              ],
+            }
+          );
           streams.set(subscriberUID, stream);
         },
         unsubscribeBars: (subscriberUID) => {
