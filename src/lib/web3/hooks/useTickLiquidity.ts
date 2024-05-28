@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import BigNumber from 'bignumber.js';
 
@@ -6,34 +6,66 @@ import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 
 import {
+  BaseLiquiditySSEPage,
   StaleWhileRevalidateStreamState,
   useIndexerStreamOfDualDataSet,
 } from './useIndexer';
 import { Token, TokenID } from '../utils/tokens';
 import { useToken } from './useDenomClients';
 
+interface DataRow extends BaseLiquiditySSEPage {
+  block_tmstmp: number;
+  tick_index: number;
+  reserves: string;
+  token_in: string;
+}
 export type ReserveDataRow = [tickIndex: number, reserves: number];
 type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 
-function removeZeroLiquidityValues([, data]: ReserveDataRow) {
-  return data === 0;
+function removeZeroLiquidityValues(row: DataRow) {
+  return !Number(row.reserves);
 }
+const tokenPairMapLiquidityOpts = {
+  // remove entries of value 0 from the accumulated map, they are not used
+  removeEntryMatch: removeZeroLiquidityValues,
+  getDataUpdateKey: (dataRow: DataRow) => dataRow.tick_index,
+  getDataUpdateValue: (dataRow: DataRow) => Number(dataRow.reserves),
+};
 // add convenience method to fetch liquidity maps of a pair
 export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   TokenID?,
   TokenID?
 ]): StaleWhileRevalidateStreamState<
-  [ReserveDataRow, ReserveDataRow],
+  [DataRow, DataRow],
   [ReserveDataSet, ReserveDataSet]
 > {
   const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
   const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer
-  return useIndexerStreamOfDualDataSet<ReserveDataRow>(
-    encodedA && encodedB && `/liquidity/pair/${encodedA}/${encodedB}`,
+  return useIndexerStreamOfDualDataSet<DataRow, ReserveDataSet>(
+    encodedA &&
+      encodedB &&
+      `v1/liquidity/pair?token_a=${encodedA}&token_b=${encodedB}`,
     {
-      // remove entries of value 0 from the accumulated map, they are not used
-      removeEntryMatch: removeZeroLiquidityValues,
+      ...tokenPairMapLiquidityOpts,
+      separateUpdates: useCallback(
+        (dataRows: DataRow[]) => {
+          const dataRowsTokenA: DataRow[] = [];
+          const dataRowsTokenB: DataRow[] = [];
+          return dataRows.reduce(
+            (acc, dataRow) => {
+              if (dataRow.token_in === tokenIdA) {
+                acc[0].push(dataRow);
+              } else if (dataRow.token_in === tokenIdB) {
+                acc[1].push(dataRow);
+              }
+              return acc;
+            },
+            [dataRowsTokenA, dataRowsTokenB]
+          );
+        },
+        [tokenIdA, tokenIdB]
+      ),
     }
   );
 }

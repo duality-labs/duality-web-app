@@ -1,15 +1,38 @@
 import useSWR from 'swr';
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
+import {
+  EventStreamContentType,
+  fetchEventSource,
+} from '@microsoft/fetch-event-source';
 import { useMemo } from 'react';
 import { seconds } from '../../utils/time';
 
-const { REACT_APP__INDEXER_API = '' } = import.meta.env;
+const { REACT_APP__INDEXER_API = '', REACT_APP__INDEXER_API_KEY = '' } =
+  import.meta.env;
 
-type FlattenSingularItems<T> = T extends [infer U] ? U : T;
-
-type value = string | number;
-type BaseDataRow = FlattenSingularItems<[id: value, values: value | value[]]>;
-type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow['1']>;
+type Value = string | number;
+type BlockTimestamp = number;
+export type BaseTimeSeriesSSERow = {
+  block_tmstmp: BlockTimestamp;
+  block_hght: number;
+};
+export type BaseTimeSeriesSSEPage = { data: BaseTimeSeriesSSERow };
+export type BaseLiquiditySSEPage = BaseTimeSeriesSSERow;
+export type BaseStatsDataSSERow = { tmstmp: BlockTimestamp };
+export type BaseStatsDataSSEPage = {
+  current: BaseStatsDataSSERow;
+  hour24: BaseStatsDataSSERow;
+  hour48: BaseStatsDataSSERow;
+};
+type BaseDataRow =
+  | BaseLiquiditySSEPage
+  | BaseTimeSeriesSSEPage
+  | BaseTimeSeriesSSERow
+  | BaseStatsDataSSEPage;
+type BaseDataSet<DataRow extends BaseDataRow> = Map<
+  Value,
+  DataRow | Value | Value[]
+>;
 
 export type IndexerPage<DataRow = BaseDataRow> = {
   shape:
@@ -25,9 +48,19 @@ export type IndexerPage<DataRow = BaseDataRow> = {
   };
 };
 
-interface StreamCallbacks<DataUpdate> {
+function getDataHeight<DataRow extends BaseDataRow>(
+  dataUpdate: DataRow
+): BlockTimestamp {
+  return (
+    (dataUpdate as BaseLiquiditySSEPage)?.block_tmstmp ??
+    (dataUpdate as BaseTimeSeriesSSEPage)?.data?.block_tmstmp ??
+    (dataUpdate as BaseStatsDataSSEPage)?.current?.tmstmp
+  );
+}
+
+interface StreamCallbacks<DataRow> {
   // onUpdate returns individual update chunks
-  onUpdate?: (dataUpdates: DataUpdate[], height: number) => void;
+  onUpdate?: (dataUpdates: DataRow[], height: number) => void;
   // onCompleted indicates when the data stream is finished
   onCompleted?: () => void;
   // allow errors to be seen and handled
@@ -39,22 +72,25 @@ interface StreamOptions {
   // allow SSE requests to be disabled (they are slower to start)
   disableSSE?: boolean;
 }
-interface AccumulatorOptions<DataRow extends BaseDataRow> {
+export interface AccumulatorOptions<DataRow extends BaseDataRow> {
+  // define how the accumulator class should store the data
+  getDataUpdateKey?: (dataRow: DataRow) => Value;
+  getDataUpdateValue?: (dataRow: DataRow) => DataRow | Value | Value[];
   dataSetCount?: number;
-  separateUpdates?: (dataUpdate: DataRow[][]) => DataRow[][];
+  separateUpdates?: (dataUpdate: DataRow[]) => DataRow[][];
   // optional value to remove from accumulator maps
   // (0 values should be removed from liquidity maps)
   removeEntryMatch?: (dataRow: DataRow) => boolean;
   // optional initial setting of the accumulateUpdates function
   accumulateUpdates?: typeof accumulateUpdatesUsingMutation;
 }
-export class IndexerStream<DataUpdate extends BaseDataRow | BaseDataRow[]> {
+export class IndexerStream<DataRow extends BaseDataRow> {
   // use single AbortController for all the requests
   private abortController = new AbortController();
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamCallbacks<DataUpdate>,
+    callbacks: StreamCallbacks<DataRow>,
     opts?: StreamOptions
   ) {
     // replace abortController if one is given
@@ -70,8 +106,6 @@ export class IndexerStream<DataUpdate extends BaseDataRow | BaseDataRow[]> {
     })
       // primarily attempt to use a SSE connection
       .then(() => this.subscribeToSSE(url, callbacks))
-      // fallback to long-polling if not available
-      .catch(() => this.subscribeToLongPolling(url, callbacks))
       .catch((e) => {
         // unsubscribe on failure of all methods
         this.unsubscribe();
@@ -84,77 +118,97 @@ export class IndexerStream<DataUpdate extends BaseDataRow | BaseDataRow[]> {
       });
   }
 
-  private async subscribeToSSE(
-    url: URL,
-    callbacks: StreamCallbacks<DataUpdate>
-  ) {
+  private async subscribeToSSE(url: URL, callbacks: StreamCallbacks<DataRow>) {
     return await new Promise<void>((resolve, reject) => {
+      // add "/sse" to get SSE endpoint of path
+      const sseURL = new URL(`${url.pathname}/sse${url.search}`, url);
+
       // create cancellable SSE event source
-      const listenerOptions = { signal: this.abortController.signal };
       try {
-        // add event source and add a cancellation listener
-        const eventSource = new EventSource(url);
-        this.abortController.signal.onabort = () => eventSource.close();
-        const setEmptyDataSet = (e: MessageEvent<string>) => {
-          const heightOfData = Number(e.lastEventId.split(':').at(0));
-          callbacks.onUpdate?.([], heightOfData);
-        };
-        // listen for updates and remove listener if aborted
-        eventSource.addEventListener(
-          'update',
-          (e: MessageEvent<string>) => {
-            let dataUpdates: DataUpdate[] | undefined;
-            if (e.data) {
-              try {
-                dataUpdates = JSON.parse(e.data) as DataUpdate[];
-              } catch (err) {
-                reject(
-                  new Error(`Could not parse data: ${e.data}`, {
-                    cause: err instanceof Error ? err : new Error(`${err}`),
-                  })
-                );
+        class RetriableError extends Error {}
+        class FatalError extends Error {}
+        let retryInterval: number = 0;
+
+        // add event source connected to theinstance abortController
+        fetchEventSource(sseURL.toString(), {
+          headers: {
+            auth_token: `${REACT_APP__INDEXER_API_KEY}`,
+          },
+          signal: this.abortController.signal,
+          async onopen(response) {
+            // content type might be "text/event-stream; charset=utf-8"
+            const contentType = [
+              ...(response.headers.get('content-type')?.split(';') ?? []),
+            ];
+            if (response.ok && contentType.includes(EventStreamContentType)) {
+              // response is good: reset the retry interval
+              retryInterval = 0;
+            }
+            // abort wrong type of request
+            else if (!contentType.includes(EventStreamContentType)) {
+              throw new FatalError(`Unexpected content type: ${contentType}`);
+            }
+            // client-side errors are usually non-retriable,
+            // but allow HTTP 429 (too many requests) to be retryable
+            else if (
+              response.status >= 400 &&
+              response.status < 500 &&
+              response.status !== 429
+            ) {
+              throw new FatalError(`Unexpected status: ${response.status}`);
+            }
+            // retry other types of errors
+            else {
+              throw new RetriableError(`Unexpected status: ${response.status}`);
+            }
+          },
+          // listen for updates and remove listener if aborted
+          onmessage(ev) {
+            // skip empty data
+            if (!ev?.data) return;
+            switch (ev.data) {
+              case 'initial payload': {
+                // there is no information here
+                break;
+              }
+              default: {
+                // assume the payload is a data update
+                const dataUpdate = parseData<DataRow>(ev.data);
+                const heightOfData = getDataHeight(dataUpdate);
+                // todo: collect dataUpdates for each height to send onUpdate
+                callbacks.onUpdate?.([dataUpdate], heightOfData);
               }
             }
-            if (dataUpdates) {
-              // prevent heartbeat from setting an empty data update
-              eventSource.removeEventListener('heartbeat', setEmptyDataSet);
-              // get data height
-              const heightOfData = Number(e.lastEventId.split(':').at(0));
-              // send update directly to listener
-              callbacks.onUpdate?.(dataUpdates, heightOfData);
+            function parseData<DataRow>(data: string): DataRow {
+              try {
+                return JSON.parse(data);
+              } catch (err) {
+                // allow the subscription to be restarted on unexpected data
+                throw new RetriableError(`Could not parse data: ${data}`, {
+                  cause: err instanceof Error ? err : new Error(`${err}`),
+                });
+              }
             }
           },
-          listenerOptions
-        );
-        // for the first heartbeat, if no data has yet come set "no data" state
-        eventSource.addEventListener('heartbeat', setEmptyDataSet, {
-          ...listenerOptions,
-          once: true,
-        });
-        // 'end' message is sent if a data stream is complete
-        eventSource.addEventListener(
-          'end',
-          () => {
-            // send onCompleted event to listener
-            callbacks.onCompleted?.();
-            // end promise
-            resolve();
+          onclose() {
+            // if the server closes the connection unexpectedly, retry:
+            throw new RetriableError('Unexpected close');
           },
-          listenerOptions
-        );
-        eventSource.addEventListener(
-          'error',
-          (e) => {
-            callbacks.onError?.(
-              new Error('SSE error', { cause: new Error(e.type) })
-            );
-            // cancel the SSE if it is already closed
-            if (eventSource.CLOSED) {
-              reject(new Error('Could not establish an open EventSource'));
+          onerror(err) {
+            if (err instanceof FatalError) {
+              // send fatal error to parent
+              callbacks.onError?.(err);
+              // rethrow to stop the operation
+              throw new Error(
+                `SSE response was not ok for ${sseURL.toString()}`,
+                { cause: err }
+              );
+            } else {
+              // return retry interval here (and increase the back-off linearly)
+              return (retryInterval += 1 * seconds);
             }
           },
-          listenerOptions
-        );
+        }).then(resolve);
       } catch (e) {
         reject(
           new Error('SSE Error', {
@@ -163,100 +217,6 @@ export class IndexerStream<DataUpdate extends BaseDataRow | BaseDataRow[]> {
         );
       }
     });
-  }
-
-  maxRetries = 5;
-  private async subscribeToLongPolling(
-    url: URL,
-    callbacks: StreamCallbacks<DataUpdate>
-  ) {
-    // create cancellable long-polling fetch options
-    const fetchOptions = { signal: this.abortController.signal };
-    try {
-      let knownHeight = 0;
-      // check for desired real-time: if query is open ended to the future
-      const isRealtimeRequest = !(
-        Number(url.searchParams.get('pagination.before')) ||
-        Number(url.searchParams.get('block_range.to_height'))
-      );
-      // hack/fix: to control time limit behavior, assume the before timestamp
-      //           is in the past as we can't candle future timestamp limits
-      const toHeight = url.searchParams.get('pagination.before')
-        ? 0
-        : Number(url.searchParams.get('block_range.to_height')) ||
-          Number.POSITIVE_INFINITY;
-      do {
-        let retries = 0;
-        let nextKey: string | undefined = undefined;
-        do {
-          // create new URL that can be mutated without mutating original URL
-          const loopURL = new URL(url);
-          // add next page key if not all data was returned by last request
-          if (nextKey) {
-            loopURL.searchParams.set('pagination.key', nextKey);
-          }
-          // overwrite block height to request from (to long-poll next update)
-          // note: known height is usually the chain height so the request
-          //       will be answered when the next block of data is available)
-          else if (isRealtimeRequest && knownHeight) {
-            loopURL.searchParams.set(
-              'block_range.from_height',
-              knownHeight.toFixed()
-            );
-          }
-          const response = await fetch(loopURL.toString(), fetchOptions);
-          if (response.status === 200) {
-            const {
-              data = [],
-              pagination = {},
-              block_range: range,
-            } = (await response.json()) as IndexerPage<DataUpdate>;
-            // send update directly to listener
-            callbacks.onUpdate?.(data, Number(range?.to_height));
-            // set known height for next request
-            if (range && range.to_height > knownHeight) {
-              knownHeight = range.to_height;
-            }
-            // fetch again if necessary
-            nextKey = pagination['next_key'] || undefined;
-          }
-          // if the request was not successful, log it and try to continue
-          // (with a brief pause to not cause a large cascade of errors)
-          else {
-            // retry only if reasonable
-            if (retries < this.maxRetries) {
-              // eslint-disable-next-line no-console
-              console.error(
-                `Could not fetch long-polling data (attempt: ${
-                  retries + 1
-                }, code: ${
-                  response.status
-                }), response: ${await response.text()}`
-              );
-              // relate back-off to number of retries for a linear back-off
-              const backoff = retries * 1 * seconds;
-              await new Promise((resolve) => setTimeout(resolve, backoff));
-              retries += 1;
-              continue;
-            }
-            // exit loop due to stuck request
-            else {
-              throw new Error(
-                `Could not fetch data after ${this.maxRetries} times.`
-              );
-            }
-          }
-        } while (nextKey);
-      } while (knownHeight < toHeight);
-
-      // if there is no new height to consider the request is completed
-      // send onCompleted event to listener
-      callbacks.onCompleted?.();
-    } catch (e) {
-      throw new Error('Long-Polling Error', {
-        cause: e instanceof Error ? e : new Error(`${e}`),
-      });
-    }
   }
 
   // call to unsubscribe from any data stream
@@ -270,49 +230,43 @@ export class IndexerStream<DataUpdate extends BaseDataRow | BaseDataRow[]> {
 // each data update as a new object (breaking referential-equality comparision)
 function accumulateUpdatesToNewState<
   DataRow extends BaseDataRow,
-  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>,
-  DataUpdate = DataRow | DataRow[]
+  DataSet extends BaseDataSet<DataRow>
 >(
   currentMaps: DataSet[],
-  dataUpdates: DataUpdate[],
+  dataUpdatesForEachSet: DataRow[][],
   opts: AccumulatorOptions<DataRow>
 ) {
   // create new map: this will allow React hooks to function as expected,
   // each new update returns a new Map object (not the same but mutated object)
   const newMaps = currentMaps.map((map) => new Map(map) as DataSet);
   // add data updates to new map
-  return accumulateUpdatesUsingMutation(newMaps, dataUpdates, opts);
+  return accumulateUpdatesUsingMutation(newMaps, dataUpdatesForEachSet, opts);
 }
 
 // accumulation function that may be quicker than using non-mutation (for React)
 function accumulateUpdatesUsingMutation<
   DataRow extends BaseDataRow,
-  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>,
-  DataUpdate = DataRow | DataRow[]
+  DataSet extends BaseDataSet<DataRow>
 >(
   currentMaps: DataSet[],
-  dataUpdates: DataUpdate[],
+  dataUpdatesForEachSet: DataRow[][],
   opts: AccumulatorOptions<DataRow>
 ) {
   // add data updates to current maps
-  // take possible DataRow[] | DataRow[][] input and normalize to DataRow[][]
-  // so that the can work with a standard array of DataSets in every case
-  const dataUpdatesForEachSet =
-    opts.dataSetCount && opts.dataSetCount > 1
-      ? opts.separateUpdates?.(dataUpdates as DataRow[][]) ||
-        (dataUpdates as DataRow[][])
-      : [dataUpdates as unknown as DataRow[]];
   for (let i = 0; i < dataUpdatesForEachSet.length; i++) {
     const map = currentMaps[i];
     const dataUpdates = dataUpdatesForEachSet[i];
     if (map && dataUpdates) {
       for (const dataUpdate of dataUpdates) {
-        const [id, data] = dataUpdate;
+        const [key, value] = [
+          opts.getDataUpdateKey?.(dataUpdate) || getDataHeight(dataUpdate),
+          opts.getDataUpdateValue?.(dataUpdate) || (dataUpdate as DataRow),
+        ];
         // remove keys if the data is defined as "empty"
         if (opts.removeEntryMatch?.(dataUpdate)) {
-          map.delete(id);
+          map.delete(key);
         } else {
-          map.set(id, data);
+          map.set(key, value);
         }
       }
     }
@@ -323,20 +277,20 @@ function accumulateUpdatesUsingMutation<
 // accumulation function that disregards state and returns only the last update
 function accumulateLastUpdateOnlyToNewState<
   DataRow extends BaseDataRow,
-  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>,
-  DataUpdate = DataRow | DataRow[]
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(
   _currentMaps: DataSet[],
-  dataUpdates: DataUpdate[],
+  dataUpdatesForEachSet: DataRow[][],
   opts: AccumulatorOptions<DataRow>
 ) {
   // add data updates to a new map (ignore previous state)
   const newMaps = Array.from({ length: opts?.dataSetCount || 1 }).map<DataSet>(
     () => new Map() as DataSet
   );
-  return accumulateUpdatesUsingMutation(newMaps, dataUpdates, opts);
+  return accumulateUpdatesUsingMutation(newMaps, dataUpdatesForEachSet, opts);
 }
 
+// todo: StreamSingleDataSetCallbacks could extend from StreamMultipleDataSetsCallbacks
 interface StreamSingleDataSetCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
@@ -357,7 +311,7 @@ export class IndexerStreamAccumulateSingleDataSet<
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamSingleDataSetCallbacks<DataRow>,
+    callbacks: StreamSingleDataSetCallbacks<DataRow, DataSet>,
     opts?: AccumulatorOptions<DataRow> & StreamOptions
   ) {
     this.stream = new IndexerStream<DataRow>(
@@ -367,9 +321,7 @@ export class IndexerStreamAccumulateSingleDataSet<
           callbacks.onUpdate?.(update, dataHeight);
           // update accumulated dataSet
           this.dataHeight = dataHeight;
-          this.dataSet = this.accumulateDataSet(update, {
-            removeEntryMatch: opts?.removeEntryMatch,
-          });
+          this.dataSet = this.accumulateDataSet([update], opts);
           // send updated dataSet to listener
           callbacks.onAccumulated?.(this.dataSet, this.dataHeight, update);
         },
@@ -386,7 +338,7 @@ export class IndexerStreamAccumulateSingleDataSet<
 
   // abstracted method to update saved dataSet
   private accumulateDataSet = (
-    dataUpdates: DataRow[],
+    dataUpdates: DataRow[][],
     opts: AccumulatorOptions<DataRow> = {}
   ) => {
     // save set to class instance and return
@@ -426,11 +378,11 @@ export class IndexerStreamAccumulateMultipleDataSets<
   // store data in class instance
   private dataSets: DataSet[] = [];
   private dataHeight = 0;
-  private stream?: IndexerStream<DataRow[]>;
+  private stream?: IndexerStream<DataRow>;
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamMultipleDataSetsCallbacks<DataRow>,
+    callbacks: StreamMultipleDataSetsCallbacks<DataRow, DataSet>,
     opts: AccumulatorOptions<DataRow> &
       StreamOptions & {
         // enforce knowing the number of data sets: and it should be above 1
@@ -445,20 +397,23 @@ export class IndexerStreamAccumulateMultipleDataSets<
     this.dataSets = Array.from({ length: dataSetCount }).map<DataSet>(
       () => new Map() as DataSet
     );
-    this.stream = new IndexerStream<DataRow[]>(
+    this.stream = new IndexerStream<DataRow>(
       relativeURL,
       {
-        onUpdate: (update: DataRow[][], dataHeight: number) => {
-          callbacks.onUpdate?.(update, dataHeight);
+        onUpdate: (update: DataRow[], dataHeight: number) => {
+          const dataUpdatesForEachSet = opts.separateUpdates?.(update) || [
+            update,
+          ];
+          callbacks.onUpdate?.(dataUpdatesForEachSet, dataHeight);
           // update accumulated dataSet
           this.dataHeight = dataHeight;
-          this.dataSets = this.accumulateDataSet(update, {
-            dataSetCount,
-            separateUpdates: opts?.separateUpdates,
-            removeEntryMatch: opts?.removeEntryMatch,
-          });
+          this.dataSets = this.accumulateDataSet(dataUpdatesForEachSet, opts);
           // send updated dataSet to listener
-          callbacks.onAccumulated?.(this.dataSets, this.dataHeight, update);
+          callbacks.onAccumulated?.(
+            this.dataSets,
+            this.dataHeight,
+            dataUpdatesForEachSet
+          );
         },
         onError: callbacks.onError,
         onCompleted: () =>

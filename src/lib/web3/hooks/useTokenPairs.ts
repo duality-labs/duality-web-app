@@ -1,6 +1,9 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Token, TokenID } from '../utils/tokens';
-import { useIndexerStreamOfSingleDataSet } from './useIndexer';
+import {
+  BaseLiquiditySSEPage,
+  useIndexerStreamOfSingleDataSet,
+} from './useIndexer';
 import { useTokenByDenom, useUniqueDenoms } from './useDenomClients';
 import { SWRCommon, useSwrResponse } from './useSWR';
 import { useSimplePrice } from '../../tokenPrices';
@@ -11,7 +14,13 @@ export type TokenPairReserves = [
   reserves0: number,
   reserves1: number
 ];
-type DataRow = [index: number, values: TokenPairReserves];
+interface DataRow extends BaseLiquiditySSEPage {
+  block_tmstmp: number;
+  token_a: string;
+  token_b: string;
+  tvl_a: string;
+  tvl_b: string;
+}
 
 type TokenPairsState = {
   data: TokenPairReserves[] | undefined;
@@ -19,16 +28,28 @@ type TokenPairsState = {
 };
 
 export default function useTokenPairs(): TokenPairsState {
-  const { data, error } =
-    useIndexerStreamOfSingleDataSet<DataRow>('/liquidity/pairs');
+  const { data, error } = useIndexerStreamOfSingleDataSet<
+    DataRow,
+    Map<string, TokenPairReserves>
+  >('v1/liquidity/pairs', {
+    getDataUpdateKey: useCallback(
+      (dataRow: DataRow) => `${dataRow.token_a}<>${dataRow.token_b}`,
+      []
+    ),
+    getDataUpdateValue: useCallback(
+      (dataRow: DataRow): TokenPairReserves => [
+        dataRow.token_a,
+        dataRow.token_b,
+        Number(dataRow.tvl_a) || 0,
+        Number(dataRow.tvl_b) || 0,
+      ],
+      []
+    ),
+  });
 
+  // return as array of values
   const values: TokenPairReserves[] | undefined = useMemo(() => {
-    if (data) {
-      const values = Array.from(data)
-        .sort(([a], [b]) => a - b)
-        .map((row) => row[1]);
-      return values;
-    }
+    return data && Array.from(data.values());
   }, [data]);
 
   // return state
