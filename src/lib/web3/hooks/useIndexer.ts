@@ -65,6 +65,8 @@ interface StreamCallbacks<DataRow> {
   onCompleted?: () => void;
   // allow errors to be seen and handled
   onError?: (error: Error) => void;
+  // allow retriable errors to be seen
+  onRetry?: (error: Error) => void;
 }
 interface StreamOptions {
   // optional single AbortController for all the requests
@@ -191,11 +193,17 @@ export class IndexerStream<DataRow extends BaseDataRow> {
             }
           },
           onclose() {
+            // if the request was cancelled then don't retry
+            if (this?.signal?.aborted) {
+              throw new FatalError('Expected close (aborted)');
+            }
             // if the server closes the connection unexpectedly, retry:
-            throw new RetriableError('Unexpected close');
+            else {
+              throw new RetriableError('Unexpected close');
+            }
           },
           onerror(err) {
-            if (err instanceof FatalError) {
+            if (err instanceof FatalError || this?.signal?.aborted) {
               // send fatal error to parent
               callbacks.onError?.(err);
               // rethrow to stop the operation
@@ -204,6 +212,8 @@ export class IndexerStream<DataRow extends BaseDataRow> {
                 { cause: err }
               );
             } else {
+              // send non-fatal error to parent
+              callbacks.onRetry?.(err);
               // return retry interval here (and increase the back-off linearly)
               return (retryInterval += 1 * seconds);
             }
@@ -326,6 +336,7 @@ export class IndexerStreamAccumulateSingleDataSet<
           callbacks.onAccumulated?.(this.dataSet, this.dataHeight, update);
         },
         onError: callbacks.onError,
+        onRetry: callbacks.onRetry,
         onCompleted: () =>
           callbacks.onCompleted?.(this.dataSet, this.dataHeight),
       },
@@ -416,6 +427,7 @@ export class IndexerStreamAccumulateMultipleDataSets<
           );
         },
         onError: callbacks.onError,
+        onRetry: callbacks.onRetry,
         onCompleted: () =>
           callbacks.onCompleted?.(this.dataSets, this.dataHeight),
       },
