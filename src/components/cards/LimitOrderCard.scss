@@ -1,25 +1,16 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/font/size.scss' as font-size;
 
 .limitorder-card {
-  .limitorder-type {
-    // style limit order type selection like pills
-    .tabs__nav {
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      border: 1px solid var(--page-card-border);
-      border-radius: paddings.$p-3;
-      overflow: hidden;
-      .tabs__nav-button {
-        flex: 1;
-        border-radius: 0;
-        padding: paddings.$p-3 0 !important;
-        font-size: 0.85em;
-        &.active {
-          color: hsla(165, 83%, 57%, 1);
-          font-weight: bold;
-        }
-      }
-    }
+  & {
+    overflow: visible;
+  }
+
+  .text-warning,
+  .text-error {
+    width: 100%;
+    max-width: 20em;
+    margin: 0 auto;
   }
 
   // override default select input styles
@@ -47,13 +38,89 @@
     .numeric-value-row__value {
       color: white;
     }
+    .numeric-value-row__right {
+      width: auto;
+      max-width: 12em; // sized to max "demoUSDC per<wbr/> demoNTRN"
+    }
+  }
+
+  .limit-price {
+    & {
+      padding: paddings.$p-4;
+      border-radius: 1rem;
+      border: 1px solid transparent;
+      background-color: var(--default);
+    }
+    .numeric-value-input {
+      padding: paddings.$p-0;
+      border: 1px solid transparent;
+      background-color: var(--default);
+      color: white;
+      & input {
+        align-self: center;
+        color: white;
+        font-size: 1.5em;
+      }
+    }
+    .radio-button-group-switch {
+      & {
+        flex: 0 0 auto;
+      }
+      .moving-background {
+        background-color: var(--token-search-bg);
+      }
+    }
+    &.limit-price--error {
+      &,
+      .radio-button-group-switch {
+        color: var(--error);
+        background-color: hsla(0, 73%, 97%, 1);
+        border-color: var(--error);
+      }
+      .numeric-value-input,
+      button,
+      input,
+      input:disabled {
+        background-color: hsla(0, 73%, 97%, 1);
+        color: var(--error);
+      }
+    }
+  }
+
+  .limit-expiry-selection {
+    min-width: 20em; // sized so that all options can fit without layout wrapping
+  }
+  .radio-button-group-switch {
+    flex: 0 0 auto;
+  }
+
+  .direction-button-row {
+    & {
+      z-index: 1;
+      position: relative;
+    }
+    .direction-button {
+      width: 1.6em;
+      height: 1.6em;
+      border-radius: 100%;
+      background: var(--page-card-border);
+      font-size: 1.25em;
+    }
+  }
+
+  .radio-button-group-switch {
+    &.text-s button {
+      padding: paddings.$p-2 paddings.$p-sm;
+      font-size: font-size.$text-s;
+    }
   }
 
   .numeric-value-input {
     color: hsl(218deg, 11%, 65%);
-    background-color: hsla(216, 20%, 25%, 1);
-    border: 1px solid var(--page-card-border);
+    background-color: var(--default);
+    border: 1px solid var(--page-card);
     border-radius: paddings.$p-3;
+    padding: paddings.$p-3 paddings.$p-4;
     input {
       font-size: 1rem;
       font-weight: 500;
@@ -76,7 +143,11 @@
     align-items: baseline;
   }
 
-  .limit-order__confirm-button {
-    font-size: 1.25rem;
+  .select-input {
+    .select-input-selection,
+    .select-input-group,
+    .select-input-group label {
+      background-color: var(--default);
+    }
   }
 }

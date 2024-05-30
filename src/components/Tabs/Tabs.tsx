@@ -4,7 +4,7 @@ import './Tabs.scss';
 
 export interface Tab {
   nav: ReactNode;
-  Tab: React.FunctionComponent;
+  tab?: ReactNode;
 }
 export default function Tabs({
   tabs,
@@ -23,7 +23,7 @@ export default function Tabs({
     givenTabIndex !== undefined
       ? [givenTabIndex, givenSetTabIndex]
       : [defaultTabIndex, defaultSetTabIndex];
-  const { Tab } = tabs[tabIndex];
+  const { tab } = tabs[tabIndex];
 
   return (
     <div className={['tabs col gap-4', className].filter(Boolean).join(' ')}>
@@ -47,9 +47,7 @@ export default function Tabs({
         })}
       </div>
       <div className="tabs__tab flex row">
-        <div className="flex col">
-          <Tab />
-        </div>
+        <div className="flex col">{tab}</div>
       </div>
     </div>
   );

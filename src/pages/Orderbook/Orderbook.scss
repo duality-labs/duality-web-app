@@ -6,8 +6,16 @@
     @include paddings.padding('y', 'md');
   }
 
-  // make the main row at least a decent height
-  .orderbook-body {
-    min-height: 750px;
+  .orderbook-chart-book {
+    & {
+      background-color: var(--default);
+      border-radius: 1rem;
+    }
+
+    .page-card:has(iframe) {
+      border-width: 0;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { ReactNode, useCallback, useMemo, useRef } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
@@ -29,6 +29,9 @@ interface InputGroupProps {
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
+  inactive?: boolean;
+  header?: ReactNode;
+  subHeader?: ReactNode;
   maxValue?: number;
 }
 
@@ -46,9 +49,12 @@ export default function TokenInputGroup({
   token,
   denom = token?.base,
   defaultAssetMode,
+  header,
+  subHeader,
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
+  inactive = false,
   maxValue: givenMaxValue,
 }: InputGroupProps) {
   const onPickerChange = useCallback(
@@ -72,7 +78,8 @@ export default function TokenInputGroup({
   }, [value, price]);
 
   const { data: balance } = useBankBalanceDisplayAmount(denom);
-  const maxValue = givenMaxValue || balance;
+  const maxValue = givenMaxValue ?? balance;
+  const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div
       className={[
@@ -82,70 +89,85 @@ export default function TokenInputGroup({
       ]
         .filter(Boolean)
         .join(' ')}
+      onClick={() => inputRef.current?.focus()}
+      onKeyDown={() => undefined}
+      role="button"
+      tabIndex={-1}
     >
-      {maxValue && (
-        <h5 className="token-group-title">
-          Available{' '}
-          {formatAmount(maxValue, {
-            useGrouping: true,
-          })}
-        </h5>
-      )}
-      {!disabledInput && token && maxValue && Number(maxValue) > 0 && (
-        <span className="token-group-balance">
-          <button
-            type="button"
-            className="badge badge-light"
-            onClick={() =>
-              onValueChanged?.(
-                // allow max value be as long as it needs to be to perfectly fit user's balance
-                roundToBaseUnit(token, maxValue) || ''
-              )
-            }
+      <div className="row gap-3">
+        <div className="col flex my-1">
+          <h5 className="token-group-title">
+            {header ||
+              (maxValue &&
+                `Available ${formatAmount(maxValue, {
+                  useGrouping: true,
+                })}`) || <>&nbsp;</>}
+          </h5>
+        </div>
+        {subHeader && (
+          <div className="col token-group-sub-header my-1">{subHeader}</div>
+        )}
+        {!disabledInput && token && !!maxValue && Number(maxValue) > 0 && (
+          <div className="col token-group-balance gap-3">
+            <button
+              type="button"
+              className="badge badge-light"
+              onClick={() =>
+                onValueChanged?.(
+                  // allow max value be as long as it needs to be to perfectly fit user's balance
+                  roundToBaseUnit(token, maxValue) || ''
+                )
+              }
+            >
+              MAX
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="row">
+        <div className="col flex">
+          <TokenPicker
+            className="gutter-l-3"
+            value={token}
+            onChange={onTokenChanged ? onPickerChange : undefined}
+            exclusion={exclusion}
+            disabled={disabledToken}
+            defaultAssetMode={defaultAssetMode}
+          />
+        </div>
+        <div className="col flex mt-sm">
+          <NumberInput
+            type="text"
+            innerRef={inputRef}
+            className={[
+              'token-group-input',
+              !Number(value) && 'input--zero',
+              inactive && 'text-muted',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            value={value}
+            placeholder={placeholder}
+            onChange={onValueChanged}
+            onClick={selectAll}
+            disabled={disabledInput}
+            style={useMemo(() => {
+              return {
+                // set width as minimum amount available
+                minWidth: '100%',
+                width: 0,
+              };
+            }, [])}
+          />
+          <span
+            className={['token-group-value', inactive && 'text-muted']
+              .filter(Boolean)
+              .join(' ')}
           >
-            MAX
-          </button>
-          <button
-            type="button"
-            className="badge badge-light"
-            onClick={() =>
-              // allow rounding on half of balance because we don't need an exact target
-              onValueChanged?.(
-                roundToBaseUnit(token, Number(maxValue) / 2) || ''
-              )
-            }
-          >
-            HALF
-          </button>
-        </span>
-      )}
-      <TokenPicker
-        className="gutter-l-3"
-        value={token}
-        onChange={onPickerChange}
-        exclusion={exclusion}
-        disabled={disabledToken}
-        defaultAssetMode={defaultAssetMode}
-      />
-      <NumberInput
-        type="text"
-        className={['token-group-input', !Number(value) && 'input--zero']
-          .filter(Boolean)
-          .join(' ')}
-        value={value}
-        placeholder={placeholder}
-        onChange={onValueChanged}
-        onClick={selectAll}
-        disabled={disabledInput}
-        style={useMemo(() => {
-          return {
-            // set width as minimum amount available
-            minWidth: '100%',
-            width: 0,
-          };
-        }, [])}
-      />
-      <span className="token-group-value">{secondaryValue}</span>
+            {secondaryValue}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

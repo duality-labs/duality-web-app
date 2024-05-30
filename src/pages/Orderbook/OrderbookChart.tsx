@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
@@ -12,6 +12,9 @@ import {
   SearchSymbolResultItem,
   Bar,
   Timezone,
+  VisiblePriceRange,
+  PriceScaleMode,
+  IChartWidgetApi,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
@@ -31,13 +34,27 @@ import { days, hours, minutes, seconds } from '../../lib/utils/time';
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
 const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
+  custom_css_url: '/tradingview.css',
+  settings_overrides: {
+    'paneProperties.backgroundType': 'solid',
+    'paneProperties.background': '#101828', // var(--default)
+  },
   debug: !PROD,
   autosize: true,
   container: '',
   locale: 'en',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone as Timezone,
-  disabled_features: ['header_symbol_search', 'header_compare'],
-  enabled_features: [],
+  disabled_features: [
+    // disable searching for symbols inside chart: token pair search is on page
+    'header_symbol_search',
+    // disable comparing multiple symbols: can get complicated
+    'header_compare',
+    // note: the mouse panning feature is called 'chart_scroll'
+    //       disabling this ensures that the right side of chart is current time
+    //       however this isn't necessary to lock to understand the liquidity
+    //       visualization we have added to the right of it
+  ],
+  enabled_features: ['hide_left_toolbar_by_default'],
   charts_storage_url: 'https://saveload.tradingview.com',
   charts_storage_api_version: '1.1',
   // path to static assets of the charting library
@@ -72,12 +89,38 @@ interface TimeSeriesPriceDataRow extends BaseTimeSeriesSSERow {
 
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
+// helper function to ensure that chart is interactable
+// note: several chart methods such as chart.getVisiblePriceRange() will throw
+//       an exception if the chart exists but is not in a ready state
+//       this method should be able to detect is the chart is not in that state
+function isChartReady(chart: IChartWidgetApi | undefined) {
+  const visibleTimeScaleRange = chart?.getVisibleRange();
+  // skip calculation if timescale is not yet visible
+  // because otherwise a measurement function will throw an exception
+  return (
+    visibleTimeScaleRange &&
+    visibleTimeScaleRange.from > 0 &&
+    visibleTimeScaleRange.to
+  );
+}
+
+export interface ChartPriceAxisInfo extends VisiblePriceRange {
+  mode: PriceScaleMode;
+  height: number;
+}
 export default function OrderBookChart({
   tokenA,
   tokenB,
+  priceIndication,
+  setPriceAxis,
 }: {
   tokenA: Token;
   tokenB: Token;
+  priceIndication?: number | undefined;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setPriceAxis?: React.Dispatch<
+    React.SetStateAction<ChartPriceAxisInfo | undefined>
+  >;
 }) {
   const tokenIdA = getTokenId(tokenA);
   const tokenIdB = getTokenId(tokenB);
@@ -86,6 +129,9 @@ export default function OrderBookChart({
 
   // find chart container to fit
   const chartRef = useRef<HTMLDivElement>(null);
+
+  // store chart widget when ready
+  const [chart, setChart] = useState<IChartWidgetApi>();
 
   const { data: tokenPairReserves } = useTokenPairs();
   const { data: tokenByDenom } = useTokenByDenom(
@@ -120,6 +166,8 @@ export default function OrderBookChart({
     const supportedResolutions: ResolutionString[] = [
       '1S', // second
       '1', // minute
+      '5', // 5 minutes
+      '10', // 10 minutes
       '60', // hour
       '1D', // day
     ] as ResolutionString[];
@@ -129,6 +177,8 @@ export default function OrderBookChart({
     } = {
       '1S': 'second', // second
       '1': 'minute', // minute
+      '5': 'minute', // minute
+      '10': 'minute', // minute
       '60': 'hour', // hour
       '1D': 'day', // day
     };
@@ -138,6 +188,8 @@ export default function OrderBookChart({
     } = {
       '1S': 1 * seconds,
       '1': 1 * minutes,
+      '5': 5 * minutes,
+      '10': 10 * minutes,
       '60': 1 * hours,
       '1D': 1 * days,
     };
@@ -454,16 +506,25 @@ export default function OrderBookChart({
         locale: 'en',
         symbol: tokenPairID,
         // start with minute resolution
-        interval: '1' as ResolutionString,
+        interval: '5' as ResolutionString,
         datafeed,
       };
 
       // create chart widget
       const tvWidget = new widget(widgetOptions);
+      tvWidget.onChartReady(() => {
+        // re-apply overrides (somtimes not applied properly)
+        if (defaultWidgetOptions.settings_overrides) {
+          tvWidget.applyOverrides(defaultWidgetOptions.settings_overrides);
+        }
+        // store current widget
+        setChart(tvWidget.activeChart());
+      });
 
       // return method to cleanup widget and data subscribers
       return () => {
         // remove widget
+        setChart(undefined);
         tvWidget.remove();
         // unsubscribe all requests (both getBars and subscribeBars)
         streams.forEach((stream) => {
@@ -473,7 +534,66 @@ export default function OrderBookChart({
     }
   }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
 
-  return <div className="trading-view-chart flex" ref={chartRef}></div>;
+  useEffect(() => {
+    if (priceIndication && chart && isChartReady(chart)) {
+      const line = chart
+        // this function will throw an exception if chart is not ready yet
+        .createOrderLine()
+        .setPrice(priceIndication)
+        .setText('')
+        .setQuantity('');
+      return () => line.remove();
+    }
+  }, [chart, priceIndication]);
+
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const setFocused = useCallback(() => setIsFocused(true), []);
+  const setUnfocused = useCallback(() => setIsFocused(false), []);
+
+  useEffect(() => {
+    if (chart) {
+      const checkChartAxis = () => {
+        setPriceAxis?.((chartPriceAxis) => {
+          const pane = isChartReady(chart) ? chart?.getPanes()[0] : undefined;
+          const rightPriceScale = pane?.getRightPriceScales?.()?.[0];
+          // this function will throw an exception if series is not yet visible
+          const visiblePriceRange = rightPriceScale?.getVisiblePriceRange?.();
+          const newChartPriceAxis: ChartPriceAxisInfo | undefined =
+            rightPriceScale && visiblePriceRange
+              ? {
+                  from: visiblePriceRange.from,
+                  to: visiblePriceRange.to,
+                  mode: rightPriceScale.getMode(),
+                  height: pane.getHeight(),
+                }
+              : undefined;
+          if (
+            (chartPriceAxis && !newChartPriceAxis) ||
+            (!chartPriceAxis && newChartPriceAxis) ||
+            chartPriceAxis?.from !== newChartPriceAxis?.from ||
+            chartPriceAxis?.to !== newChartPriceAxis?.to ||
+            chartPriceAxis?.mode !== newChartPriceAxis?.mode ||
+            chartPriceAxis?.height !== newChartPriceAxis?.height
+          ) {
+            return newChartPriceAxis;
+          }
+          return chartPriceAxis;
+        });
+        timeout = setTimeout(checkChartAxis, isFocused ? 30 : 100);
+      };
+      let timeout = setTimeout(checkChartAxis, 0);
+      return () => clearTimeout(timeout);
+    }
+  }, [chart, isFocused, setPriceAxis]);
+
+  return (
+    <div
+      className="trading-view-chart flex"
+      ref={chartRef}
+      onMouseEnter={setFocused}
+      onMouseLeave={setUnfocused}
+    ></div>
+  );
 }
 
 function getBarFromTimeSeriesRow([

@@ -212,19 +212,19 @@ function PoolOverviewTable({
     return [
       {
         nav: 'All',
-        Tab: () => <TokenTransactionTable />,
+        tab: <TokenTransactionTable />,
       },
       {
         nav: 'Swaps',
-        Tab: () => <TokenTransactionTable action="PlaceLimitOrder" />,
+        tab: <TokenTransactionTable action="PlaceLimitOrder" />,
       },
       {
         nav: 'Adds',
-        Tab: () => <TokenTransactionTable action="DepositLP" />,
+        tab: <TokenTransactionTable action="DepositLP" />,
       },
       {
         nav: 'Removes',
-        Tab: () => <TokenTransactionTable action="WithdrawLP" />,
+        tab: <TokenTransactionTable action="WithdrawLP" />,
       },
     ];
     // intermediary component to avoid repeating tokenA={tokenA} tokenB={tokenB}

@@ -21,7 +21,7 @@ interface DataRow extends BaseLiquiditySSEPage {
   reserves: string;
   token_in: string;
 }
-type ReserveDataRow = [tickIndex: number, reserves: number];
+export type ReserveDataRow = [tickIndex: number, reserves: number];
 type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 
 function removeZeroLiquidityValues(row: DataRow) {

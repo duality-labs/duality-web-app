@@ -1,180 +1,72 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import BigNumber from 'bignumber.js';
-
-import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import {
-  formatAmount,
-  getDecimalPlaces,
-  getOrderOfMagnitude,
-} from '../../lib/utils/number';
-import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import useResizeObserver from '@react-hook/resize-observer';
+
+import SelectInput from '../../components/inputs/SelectInput';
+import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
+import { formatAmount, getOrderOfMagnitude } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
-import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { Token } from '../../lib/web3/utils/tokens';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
+
+import type { PriceOffset, BucketOffset } from './Orderbook';
+import type { Bucket, Buckets } from './useBuckets';
 
 import './OrderbookList.scss';
-
-// ensure that a certain amount of liquidity rows are shown in the card
-const shownTickRows = 10;
-const spacingTicks = Array.from({ length: shownTickRows }).map(() => undefined);
 
 export default function OrderBookList({
   tokenA,
   tokenB,
+  buckets,
+  bucketResolution,
+  setBucketResolution,
+  priceIndication,
+  setPriceIndication,
+  setBucketOffsets,
+  setLimitPrice,
+  showIndividualBuckets,
+  showCumulativeBuckets,
+  setShowIndividualBuckets,
+  setShowCumulativeBuckets,
 }: {
   tokenA: Token;
   tokenB: Token;
+  priceIndication?: number | undefined;
+  buckets?: Buckets;
+  bucketResolution: number | undefined;
+  setBucketResolution: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setBucketOffsets?: React.Dispatch<React.SetStateAction<BucketOffset[][]>>;
+  setLimitPrice?: (limitPrice: string) => void;
+  showIndividualBuckets: boolean;
+  showCumulativeBuckets: boolean;
+  setShowIndividualBuckets: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowCumulativeBuckets: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
-  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
-  const {
-    data: [tokenATicks = [], tokenBTicks = []],
-  } = useTokenPairTickLiquidity([tokenIdA, tokenIdB]);
+  // improve toggling behaviour to behave like a 3 option state
+  const toggleShowIndividualBuckets = useCallback(() => {
+    setShowIndividualBuckets((show) => !show);
+    setShowCumulativeBuckets(false);
+  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
+  const toggleShowCumulativeBuckets = useCallback(() => {
+    setShowCumulativeBuckets((show) => !show);
+    setShowIndividualBuckets(false);
+  }, [setShowCumulativeBuckets, setShowIndividualBuckets]);
 
-  const [forward, reverse] = [
-    tokenId0 === tokenIdA && tokenId1 === tokenIdB,
-    tokenId1 === tokenIdA && tokenId0 === tokenIdB,
-  ];
+  const onHighlightPrice = useCallback(
+    (bucketPrice: number | undefined) => {
+      setPriceIndication?.(bucketPrice);
+    },
+    [setPriceIndication]
+  );
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
-  const resolutionPercent = 0.01; // size of price steps
-
-  const getTickBuckets = useCallback(
-    (forward: boolean, descendingOrder = forward) => {
-      const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
-      const step =
-        currentPrice &&
-        Math.pow(
-          10,
-          getOrderOfMagnitude(currentPrice) + resolutionOrderOfMagnitude
-        );
-
-      const ticks = forward ? tokenATicks : tokenBTicks;
-      const precision = 1 - resolutionOrderOfMagnitude;
-      const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
-        (_, index) =>
-          currentPrice && step
-            ? descendingOrder
-              ? Number(
-                  new BigNumber(currentPrice)
-                    .minus(index * step)
-                    .toPrecision(precision, BigNumber.ROUND_FLOOR)
-                )
-              : Number(
-                  new BigNumber(currentPrice)
-                    .plus(index * step)
-                    .toPrecision(precision, BigNumber.ROUND_CEIL)
-                )
-            : []
-      );
-      const tickBucketsLimit = descendingOrder
-        ? Math.min(...tickBucketLimits)
-        : Math.max(...tickBucketLimits);
-
-      const groupedTickEntries = ticks.reduce<
-        Array<[roundedPrice: number, reserves: number]>
-      >(
-        (acc, tick) => {
-          // add if price is within bounds
-          if (
-            step &&
-            currentPrice &&
-            // select tick prices within the outer edge of price buckets
-            (descendingOrder
-              ? tick.price1To0.isGreaterThanOrEqualTo(tickBucketsLimit)
-              : tick.price1To0.isLessThanOrEqualTo(tickBucketsLimit)) &&
-            // select tick prices within the inner edge of price buckets
-            (descendingOrder
-              ? tick.price1To0.isLessThanOrEqualTo(currentPrice)
-              : tick.price1To0.isGreaterThanOrEqualTo(currentPrice))
-          ) {
-            const foundEntry = acc.find(([limit]) => {
-              return descendingOrder
-                ? tick.price1To0.isGreaterThanOrEqualTo(limit)
-                : tick.price1To0.isLessThanOrEqualTo(limit);
-            });
-            if (foundEntry !== undefined) {
-              foundEntry[1] += (
-                forward ? tick.reserve0 : tick.reserve1
-              ).toNumber();
-            }
-          }
-          return acc;
-        },
-        tickBucketLimits.map((limit) => [limit, 0])
-      );
-      const groupedTicks = Object.fromEntries(groupedTickEntries);
-
-      // create TickInfo replacements for bucketed data
-      const fakeTicks = tickBucketLimits.map((key): TickInfo => {
-        return {
-          token0: forward ? tokenA : tokenB,
-          token1: forward ? tokenB : tokenA,
-          fee: new BigNumber(0),
-          price1To0: new BigNumber(key),
-          tickIndex1To0: priceToTickIndex(new BigNumber(key)),
-          reserve0: new BigNumber(forward ? groupedTicks[key] || 0 : 0),
-          reserve1: new BigNumber(forward ? 0 : groupedTicks[key] || 0),
-        };
-      });
-
-      return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows);
-    },
-    [currentPrice, tokenATicks, tokenBTicks, tokenA, tokenB]
-  );
-
-  // get tokenA as the top ascending from current price list
-  const filteredTokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(forward).reverse();
-  }, [forward, getTickBuckets]);
-  const filteredTokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(!forward);
-  }, [forward, getTickBuckets]);
-
-  const [previousTokenATicks, setPrevTokenATicks] = useState<Array<TickInfo>>(
-    []
-  );
-  const lastTokenATicks = useRef<Array<TickInfo | undefined>>();
-  useEffect(() => {
-    if (
-      !lastTokenATicks.current ||
-      JSON.stringify(filteredTokenATicks) !==
-        JSON.stringify(lastTokenATicks.current)
-    ) {
-      // set old data
-      if (lastTokenATicks.current) {
-        // and remove undefined ticks from list
-        setPrevTokenATicks(
-          lastTokenATicks.current.filter((tick): tick is TickInfo => !!tick)
-        );
-      }
-      // set new data
-      lastTokenATicks.current = filteredTokenATicks;
-    }
-  }, [filteredTokenATicks]);
-
-  const [previousTokenBTicks, setPrevTokenBTicks] = useState<Array<TickInfo>>(
-    []
-  );
-  const lastTokenBTicks = useRef<Array<TickInfo | undefined>>();
-  useEffect(() => {
-    if (
-      !lastTokenBTicks.current ||
-      JSON.stringify(filteredTokenBTicks) !==
-        JSON.stringify(lastTokenBTicks.current)
-    ) {
-      // set old data
-      if (lastTokenBTicks.current) {
-        // and remove undefined ticks from list
-        setPrevTokenBTicks(
-          lastTokenBTicks.current.filter((tick): tick is TickInfo => !!tick)
-        );
-      }
-      // set new data
-      lastTokenBTicks.current = filteredTokenBTicks;
-    }
-  }, [filteredTokenBTicks]);
 
   const [previousPrice, setPreviousPrice] = useState<number | undefined>();
   const lastPrice = useRef<number | undefined>(currentPrice || undefined);
@@ -191,49 +83,327 @@ export default function OrderBookList({
       // set new data
       lastPrice.current = currentPrice;
     }
-  }, [currentPrice, filteredTokenATicks]);
+  }, [currentPrice, buckets]);
 
-  const priceDecimalPlaces =
-    currentPrice !== undefined && currentPrice !== null
-      ? getDecimalPlaces(
-          currentPrice,
-          1 - getOrderOfMagnitude(resolutionPercent)
+  const [showBuyOrders, setShowBuyOrders] = useState(true);
+  const [showSellOrders, setShowSellOrders] = useState(true);
+
+  // improve toggling behaviour to behave like a 3 option state
+  const toggleShowAllOrders = useCallback(() => {
+    setShowBuyOrders(true);
+    setShowSellOrders(true);
+  }, [setShowSellOrders, setShowBuyOrders]);
+  const toggleShowBuyOrders = useCallback(() => {
+    setShowBuyOrders(true);
+    setShowSellOrders(false);
+  }, [setShowSellOrders, setShowBuyOrders]);
+  const toggleShowSellOrders = useCallback(() => {
+    setShowBuyOrders(false);
+    setShowSellOrders(true);
+  }, [setShowSellOrders, setShowBuyOrders]);
+
+  const [bucketsA, bucketsB, height] = buckets || [];
+
+  // ensure that a certain amount of liquidity rows are shown in the card
+  const [shownTickRows, setShownTickRows] = useState<number>(8);
+  const [filteredBucketsA, filteredBucketsB] = useMemo(() => {
+    const spacingTicks: undefined[] = Array.from({ length: shownTickRows });
+    const paddedBucketsA = [...(bucketsA ?? []), ...spacingTicks];
+    const paddedBucketsB = [...(bucketsB ?? []), ...spacingTicks];
+    return [
+      showBuyOrders
+        ? paddedBucketsA.slice(0, shownTickRows * (!showSellOrders ? 2 : 1))
+        : [],
+      showSellOrders
+        ? paddedBucketsB.slice(0, shownTickRows * (!showBuyOrders ? 2 : 1))
+        : [],
+    ];
+  }, [bucketsA, bucketsB, showBuyOrders, showSellOrders, shownTickRows]);
+
+  // keep track of buckets by chain height
+  const [pastBuckets, setPastBuckets] = useState<(Buckets | undefined)[]>([]);
+  useEffect(() => {
+    setPastBuckets((pastBuckets) => {
+      const previousBuckets = pastBuckets?.at(0);
+      const previousBucketsHeight = previousBuckets?.[2] || 0;
+      const currentBuckets: Buckets | undefined =
+        filteredBucketsA && filteredBucketsB && height
+          ? [
+              filteredBucketsA.filter((bucket): bucket is Bucket => !!bucket),
+              filteredBucketsB.filter((bucket): bucket is Bucket => !!bucket),
+              height,
+            ]
+          : undefined;
+      const currentBucketsHeight = currentBuckets?.[2] || 0;
+      return currentBuckets && currentBucketsHeight > previousBucketsHeight
+        ? [currentBuckets, previousBuckets]
+        : pastBuckets;
+    });
+  }, [filteredBucketsA, filteredBucketsB, height]);
+  const previousBuckets = pastBuckets?.[1];
+
+  // find how numbers should be displayed
+  const priceDecimalPlaces = useMemo<number | undefined>(() => {
+    // use same decimal places as the bucket resolution
+    return (
+      bucketResolution &&
+      Math.max(0, -Math.round(getOrderOfMagnitude(bucketResolution)))
+    );
+  }, [bucketResolution]);
+  const [amountDecimalPlacesA, amountDecimalPlacesB] = useMemo(() => {
+    // ensure minimum displayed amount has at least 2 significant digits
+    return [
+      Math.max(0, 1 - getOrderOfMagnitude(getMinimumReserves(bucketsA))),
+      Math.max(0, 1 - getOrderOfMagnitude(getMinimumReserves(bucketsB))),
+    ];
+    function getMinimumReserves(buckets: Bucket[] | undefined) {
+      const bucketReserves = buckets?.slice(0, shownTickRows).map((b) => b[2]);
+      return bucketReserves ? Math.min(...bucketReserves) : 1;
+    }
+  }, [bucketsA, bucketsB, shownTickRows]);
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const getTableSections = useCallback((table: HTMLDivElement) => {
+    const sections = {
+      header: table.querySelectorAll('thead').item(0),
+      spacer: table.querySelectorAll('tbody').item(0),
+      top: table.querySelectorAll('tbody').item(1),
+      center: table.querySelectorAll('tbody').item(2),
+      bottom: table.querySelectorAll('tbody').item(3),
+    };
+    if (sections.header && sections.top && sections.center && sections.bottom) {
+      return sections;
+    }
+  }, []);
+  const calculateRows = useCallback(() => {
+    const table = tableContainerRef.current;
+    const sections = table && getTableSections(table);
+    if (table && sections) {
+      // measure the table height
+      const tableHeight = table.offsetHeight;
+      // measure the table rows
+      const tableHeightForRows =
+        tableHeight -
+        sections.spacer.offsetHeight -
+        sections.header.offsetHeight -
+        sections.center.offsetHeight;
+      const tableRowHeight =
+        (sections.top.offsetHeight + sections.bottom.offsetHeight) /
+        (sections.top.childElementCount + sections.bottom.childElementCount);
+      // determine how many rows we could add to the table
+      const maxRowCount = tableRowHeight
+        ? Math.floor(tableHeightForRows / tableRowHeight / 2)
+        : 1;
+      setShownTickRows(maxRowCount);
+    }
+  }, [getTableSections]);
+
+  // execute on every layout update
+  useResizeObserver(tableContainerRef, calculateRows);
+  useLayoutEffect(calculateRows);
+
+  // calculate measurements to send back to parent
+  const updateBucketOffsets = useCallback(() => {
+    const table = tableContainerRef.current;
+    const sections = table && getTableSections(table);
+    const tableRowHeight =
+      sections &&
+      (sections.top.offsetHeight + sections.bottom.offsetHeight) /
+        (sections.top.childElementCount + sections.bottom.childElementCount ||
+          1);
+    if (tableRowHeight && tableRowHeight > 0 && currentPrice) {
+      // set bucket offsets
+      // measure center bucket
+      const addOffset = (el: HTMLElement): number => {
+        // if (el.tagName === 'TBODY') return 0;
+        return (
+          el.offsetTop +
+          (['TABLE', 'TBODY'].includes(el.tagName) && el.offsetParent
+            ? addOffset(el.offsetParent as HTMLElement)
+            : 0)
+        );
+      };
+      const centerOffset = addOffset(sections.center);
+      const topCenterOffset = centerOffset + 1;
+      const bottomCenterOffset = centerOffset + sections.center.offsetHeight;
+
+      // calculate offsets for all buckets
+      setBucketOffsets?.([
+        [
+          // add current price bucket
+          [
+            [currentPrice, topCenterOffset],
+            [currentPrice, bottomCenterOffset],
+          ],
+          // add token A bucket offsets
+          ...filteredBucketsA
+            .filter((bucket): bucket is Bucket => !!bucket)
+            .map(
+              ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
+                [innerBound, bottomCenterOffset + index * tableRowHeight],
+                [outerBound, bottomCenterOffset + (index + 1) * tableRowHeight],
+              ]
+            ),
+        ],
+        [
+          // add current price bucket
+          [
+            [currentPrice, bottomCenterOffset],
+            [currentPrice, topCenterOffset],
+          ],
+          // add token B bucket offsets
+          ...filteredBucketsB
+            .filter((bucket): bucket is Bucket => !!bucket)
+            .map(
+              ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
+                [innerBound, topCenterOffset - index * tableRowHeight],
+                [outerBound, topCenterOffset - (index + 1) * tableRowHeight],
+              ]
+            ),
+        ],
+      ]);
+    } else {
+      // unset bucket offsets
+      setBucketOffsets?.((offsets) => (offsets.length ? [] : offsets));
+    }
+  }, [
+    currentPrice,
+    filteredBucketsA,
+    filteredBucketsB,
+    getTableSections,
+    setBucketOffsets,
+  ]);
+  // execute on every relevent update
+  useResizeObserver(tableContainerRef, updateBucketOffsets);
+  useEffect(updateBucketOffsets, [updateBucketOffsets]);
+
+  // get price information
+  const {
+    data: [priceTokenA, priceTokenB],
+  } = useSimplePrice([tokenA, tokenB]);
+  const maxReservesWeight = useMemo<number>(() => {
+    const [bucketsA = [], bucketsB = []] = buckets || [];
+    // find the maximum reserve equivalent value for displaying "USD" value
+    // note: but we use current Dex price so we don't need to wait for price API
+    return currentPrice && (bucketsA.length || bucketsB.length) > 0
+      ? Math.max(
+          getMaximumDisplayedReserves(bucketsA),
+          getMaximumDisplayedReserves(bucketsB) * currentPrice
         )
-      : undefined;
+      : Number.POSITIVE_INFINITY;
+    function getMaximumDisplayedReserves(buckets: Bucket[] | undefined) {
+      const bucketReserves = buckets?.slice(0, shownTickRows).map((b) => b[2]);
+      return bucketReserves ? Math.max(...bucketReserves) : 0;
+    }
+  }, [buckets, currentPrice, shownTickRows]);
 
-  return (
-    <div className="flex-centered orderbook-list">
+  const activeBuckets = useMemo(() => {
+    if (currentPrice && priceIndication && currentPrice !== priceIndication) {
+      return priceIndication > currentPrice
+        ? bucketsB?.filter(([innerBound]) => priceIndication > innerBound)
+        : bucketsA?.filter(([innerBound]) => priceIndication < innerBound);
+    }
+  }, [bucketsA, bucketsB, currentPrice, priceIndication]);
+
+  const orderbookDepth = (
+    <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>
       <table className="orderbook-list__table">
         <colgroup>
           {/* minimize the first column width */}
-          <col width="0" />
-          <col />
+          <col width="1" />
+          <col width="*" />
+          <col width="*" />
         </colgroup>
         <thead>
           <tr>
             <th className="text-medium text-muted text-left">Price</th>
             <th className="text-medium text-muted text-right">Amount</th>
+            <th className="text-medium text-muted text-right">Value (USD)</th>
           </tr>
         </thead>
-        <tbody className="orderbook-list__table__ticks-a">
-          {filteredTokenATicks.map((tick, index) => {
-            return (
+        <tbody className="orderbook-list__table__gap">
+          <tr>
+            <td className="table-body-spacer"></td>
+          </tr>
+        </tbody>
+        <tbody className="orderbook-list__table__ticks-top">
+          {[...filteredBucketsB].reverse().map((bucket, index) => {
+            const [minPrice, price, reserves] = bucket || [];
+            const lastBucket = bucketsB?.at(-1);
+            // match previous state by outer bounds
+            const previousReserves = previousBuckets?.[1].find((previous) => {
+              return previous[1] === bucket?.[1];
+            })?.[2];
+            const reservesDiff =
+              previousReserves && reserves ? reserves - previousReserves : 0;
+            return minPrice && price && reserves && lastBucket ? (
               <OrderbookListRow
-                key={index}
-                tick={tick}
-                previousTicks={previousTokenATicks}
-                token={tokenA}
-                reserveKey={forward ? 'reserve0' : 'reserve1'}
+                key={price}
+                className={
+                  previousReserves
+                    ? reservesDiff
+                      ? `reserves-${reservesDiff > 0 ? 'increase' : 'decrease'}`
+                      : undefined
+                    : 'reserves-new'
+                }
+                price={price}
+                reserves={reserves}
+                reserveValueUSD={priceTokenB && reserves * priceTokenB}
+                weight={(reserves * (currentPrice ?? 0)) / maxReservesWeight}
                 priceDecimalPlaces={priceDecimalPlaces}
+                amountDecimalPlaces={amountDecimalPlacesB}
+                variant="error"
+                active={bucket && activeBuckets?.includes(bucket)}
+                hovered={
+                  bucket &&
+                  priceIndication &&
+                  activeBuckets?.at(-1) === bucket &&
+                  priceIndication <= lastBucket[1]
+                }
+                onHighlight={onHighlightPrice}
+                onClick={(bucketPrice) => {
+                  setLimitPrice?.(
+                    formatAmount(bucketPrice, {
+                      minimumFractionDigits: priceDecimalPlaces,
+                      maximumFractionDigits: priceDecimalPlaces,
+                    })
+                  );
+                }}
               />
+            ) : (
+              <EmptyRow key={price ?? `index-${index}`} />
             );
           })}
         </tbody>
-        <tbody className="orderbook-list__table__tick-center">
-          <tr>
+        <tbody
+          className={[
+            'orderbook-list__table__tick-center',
+            currentPrice === priceIndication && 'active',
+            // if price indication is in the first bucket
+            currentPrice &&
+              priceIndication &&
+              bucketsB?.[0] &&
+              currentPrice < priceIndication &&
+              priceIndication <= bucketsB[0][0] &&
+              'active active-top',
+            currentPrice &&
+              priceIndication &&
+              bucketsA?.[0] &&
+              currentPrice > priceIndication &&
+              priceIndication >= bucketsA[0][0] &&
+              'active active-bottom',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <tr
+            onMouseEnter={() => setPriceIndication?.(currentPrice ?? undefined)}
+            onMouseLeave={() => setPriceIndication?.(undefined)}
+            onClick={() => setLimitPrice?.('')}
+          >
             <DiffCell
-              colSpan={2}
-              className="text-center py-3"
+              colSpan={3}
+              className="text-center py-3 px-1 nowrap"
               diff={
                 previousPrice && currentPrice
                   ? currentPrice - previousPrice
@@ -248,71 +418,342 @@ export default function OrderBookList({
             </DiffCell>
           </tr>
         </tbody>
-        <tbody className="orderbook-list__table__ticks-b">
-          {filteredTokenBTicks.map((tick, index) => {
-            return (
+        <tbody className="orderbook-list__table__ticks-bottom">
+          {filteredBucketsA?.map((bucket, index) => {
+            const [maxPrice, price, reserves] = bucket || [];
+            const lastBucket = bucketsA?.at(-1);
+            // match previous state by outer bounds
+            const previousReserves = previousBuckets?.[1].find((previous) => {
+              return previous[1] === bucket?.[1];
+            })?.[2];
+            const reservesDiff =
+              previousReserves && reserves ? reserves - previousReserves : 0;
+            return maxPrice && price && reserves && lastBucket ? (
               <OrderbookListRow
-                key={index}
-                tick={tick}
-                previousTicks={previousTokenBTicks}
-                token={tokenB}
-                reserveKey={reverse ? 'reserve0' : 'reserve1'}
+                key={price}
+                className={
+                  previousReserves
+                    ? reservesDiff
+                      ? `reserves-${reservesDiff > 0 ? 'increase' : 'decrease'}`
+                      : `reserves=${reservesDiff}`
+                    : 'reserves-new'
+                }
+                price={price}
+                reserves={reserves}
+                reserveValueUSD={priceTokenA && reserves * priceTokenA}
+                weight={reserves / maxReservesWeight}
                 priceDecimalPlaces={priceDecimalPlaces}
+                amountDecimalPlaces={amountDecimalPlacesA}
+                variant="success"
+                active={bucket && activeBuckets?.includes(bucket)}
+                hovered={
+                  bucket &&
+                  priceIndication &&
+                  activeBuckets?.at(-1) === bucket &&
+                  priceIndication >= lastBucket[1]
+                }
+                onHighlight={onHighlightPrice}
+                onClick={(bucketPrice) => {
+                  setLimitPrice?.(
+                    formatAmount(bucketPrice, {
+                      minimumFractionDigits: priceDecimalPlaces,
+                      maximumFractionDigits: priceDecimalPlaces,
+                    })
+                  );
+                }}
               />
+            ) : (
+              <EmptyRow key={price ?? `index-${index}`} />
             );
           })}
         </tbody>
       </table>
     </div>
   );
+
+  const [firstResolvedPrice, setFirstResolvedPrice] =
+    useState<[price: number, tokenA: Token, tokenB: Token]>();
+  useEffect(() => {
+    if (currentPrice) {
+      const [savedPrice, savedTokenA, savedTokenB] = firstResolvedPrice || [];
+      // if price is not set or the tokens changed then set new price
+      if (
+        !savedPrice ||
+        !matchTokens(savedTokenA, tokenA) ||
+        !matchTokens(savedTokenB, tokenB)
+      ) {
+        // save this price context for next comparison
+        setFirstResolvedPrice([currentPrice ?? undefined, tokenA, tokenB]);
+        // set new bucket resolution
+        if (currentPrice) {
+          // start at ~1% increments
+          const bucketResolution = getBucketResolutions(currentPrice)[2];
+          setBucketResolution(bucketResolution);
+        }
+      }
+    } else {
+      setFirstResolvedPrice(undefined);
+    }
+  }, [currentPrice, firstResolvedPrice, setBucketResolution, tokenA, tokenB]);
+
+  const bucketResolutions = useMemo(() => {
+    return getBucketResolutions(currentPrice);
+  }, [currentPrice]);
+
+  // add all bucket "display reserves" values together for summary bar
+  const bucketBuyPercent = useMemo<number | undefined>(() => {
+    const [bucketsA, bucketsB] = buckets || [];
+    const reservesA = bucketsA?.reduce((acc, [, , v]) => acc + v, 0);
+    const reservesB = bucketsB?.reduce((acc, [, , v]) => acc + v, 0);
+    return reservesA && reservesB
+      ? reservesA / (reservesA + reservesB)
+      : undefined;
+  }, [buckets]);
+
+  return (
+    <>
+      <div className="orderbook-list__toolbar row p-1 gapx-1">
+        <div className="connection-controls row gapx-1">
+          <button
+            className={['button', showIndividualBuckets && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Bucket Depth"
+            onClick={toggleShowIndividualBuckets}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth1}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth3}></div>
+            <div className="button-box bg-green" style={styles.boxWidth3}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth1}></div>
+          </button>
+          <button
+            className={['button', showCumulativeBuckets && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Cumulative Depth"
+            onClick={toggleShowCumulativeBuckets}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth5}></div>
+            <div className="button-box bg-red" style={styles.boxWidth4}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth4}></div>
+            <div className="button-box bg-green" style={styles.boxWidth5}></div>
+          </button>
+          <hr />
+          <button
+            className={['button', showBuyOrders && showSellOrders && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Show Buy and Sell Orders"
+            onClick={toggleShowAllOrders}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-space"></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+          </button>
+          <button
+            className={['button', showSellOrders && !showBuyOrders && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Show Sell Orders Only"
+            onClick={toggleShowSellOrders}
+          >
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-space"></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+            <div className="button-box bg-red" style={styles.boxWidth2}></div>
+          </button>
+          <button
+            className={['button', showBuyOrders && !showSellOrders && 'active']
+              .filter(Boolean)
+              .join(' ')}
+            title="Show Buy Orders Only"
+            onClick={toggleShowBuyOrders}
+          >
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-space"></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+            <div className="button-box bg-green" style={styles.boxWidth2}></div>
+          </button>
+        </div>
+        <div
+          className="col ml-auto gutter-b-3"
+          style={{
+            minWidth: `${
+              Math.max(
+                ...bucketResolutions.map((resolution) =>
+                  Math.abs(getOrderOfMagnitude(resolution))
+                )
+              ) + 1.5
+            }em`,
+          }}
+        >
+          <div className="row flex">
+            <SelectInput<number>
+              className="focusable col flex my-0 p-0"
+              list={bucketResolutions}
+              value={bucketResolution}
+              getLabel={(value) => value}
+              onChange={setBucketResolution}
+              floating
+            />
+          </div>
+        </div>
+      </div>
+      {orderbookDepth}
+      <div className="orderbook-buy-sell-bar row p-3 gap-3">
+        <div className="orderbook-buy-sell-bar_buy-icon col px-2">B</div>
+        {bucketBuyPercent !== undefined && (
+          <>
+            <div className="orderbook-buy-sell-bar_buy-value col">
+              {(100 * bucketBuyPercent).toFixed()}%
+            </div>
+            <div
+              className="orderbook-buy-sell-bar_buy-bar col"
+              style={{ width: `${(100 * bucketBuyPercent).toFixed()}%` }}
+            ></div>
+            <div
+              className="orderbook-buy-sell-bar_sell-bar col"
+              style={{ width: `${(100 - 100 * bucketBuyPercent).toFixed()}%` }}
+            ></div>
+            <div className="orderbook-buy-sell-bar_sell-value col">
+              {(100 - 100 * bucketBuyPercent).toFixed()}%
+            </div>
+          </>
+        )}
+        <div className="orderbook-buy-sell-bar_sell-icon col px-2">S</div>
+      </div>
+    </>
+  );
+}
+
+const styles = {
+  boxWidth1: {
+    width: '0.2em',
+  },
+  boxWidth2: {
+    width: '0.45em',
+  },
+  boxWidth3: {
+    width: '0.6em',
+  },
+  boxWidth4: {
+    width: '0.6em',
+  },
+  boxWidth5: {
+    width: '0.8em',
+  },
+};
+
+function getBucketResolutions(currentPrice?: number | null): number[] {
+  const startingOrderOfMagnitude = currentPrice
+    ? getOrderOfMagnitude(currentPrice)
+    : 0;
+  return Array.from({ length: 4 }).map((_, index) => {
+    return Math.pow(10, startingOrderOfMagnitude) / Math.pow(10, index);
+  });
+}
+
+function EmptyRow() {
+  return (
+    <tr>
+      <td colSpan={3}>&nbsp;</td>
+    </tr>
+  );
 }
 
 function OrderbookListRow({
-  tick,
-  previousTicks,
-  token,
-  reserveKey,
+  className,
+  price: bucketPrice,
+  reserves,
+  reserveValueUSD,
+  weight,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
+  variant,
+  active,
+  hovered,
+  onHighlight,
+  onClick,
 }: {
-  tick: TickInfo | undefined;
-  previousTicks: TickInfo[];
-  token: Token;
-  reserveKey: 'reserve0' | 'reserve1';
+  className?: string;
+  price: number;
+  reserves: number;
+  reserveValueUSD?: number;
+  weight?: number;
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
+  variant?: 'success' | 'error';
+  active?: boolean | 0;
+  hovered?: boolean | 0;
+  onHighlight?: (bucketPrice: number | undefined) => void;
+  onClick?: (bucketPrice: number) => void;
 }) {
-  const { data: price } = useSimplePrice(token);
-  // add empty row
-  if (!tick) {
-    return (
-      <tr>
-        <td colSpan={2}>&nbsp;</td>
-      </tr>
-    );
-  }
-  // add tick row
-  const previousTokenATick = previousTicks.find((prev) => {
-    return prev.tickIndex1To0 === tick.tickIndex1To0;
-  });
-  const diff = previousTokenATick
-    ? tick[reserveKey].minus(previousTokenATick[reserveKey])
-    : new BigNumber(0);
+  // keep track of hover state and use as a price indication in parents
+  const onHover = useCallback(
+    (bucketPrice: number | undefined) => {
+      // set parent state
+      onHighlight?.(bucketPrice);
+    },
+    [onHighlight]
+  );
+  const onHoverIn = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
+    () => onHover(bucketPrice),
+    [onHover, bucketPrice]
+  );
+  const onHoverOut = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
+    () => onHover(undefined),
+    [onHover]
+  );
 
-  const value = getTokenValue(token, tick[reserveKey], price);
   return (
-    <tr key={tick.tickIndex1To0.toNumber()}>
-      <DiffCell className="text-right" diff={diff.toNumber()}>
-        {formatAmount(tick.price1To0.toNumber(), {
+    <tr
+      key={formatAmount(bucketPrice, {
+        minimumFractionDigits: priceDecimalPlaces,
+        maximumFractionDigits: priceDecimalPlaces,
+      })}
+      className={[active && 'active', hovered && 'hovered', className]
+        .filter(Boolean)
+        .join(' ')}
+      onMouseEnter={onHoverIn}
+      onMouseLeave={onHoverOut}
+      onClick={() => onClick?.(bucketPrice)}
+    >
+      <DiffCell
+        className={['text-right', variant && `text-${variant}`]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {formatAmount(bucketPrice, {
           minimumFractionDigits: priceDecimalPlaces,
           maximumFractionDigits: priceDecimalPlaces,
         })}
       </DiffCell>
-      <td className="text-right text-muted">
-        {formatAmount(value ?? '...', {
+      <td key={reserves} className="relative text-right text-muted">
+        <div className="cell-background absolute filled"></div>
+        {formatAmount(reserves ?? '...', {
           minimumFractionDigits: amountDecimalPlaces,
           maximumFractionDigits: amountDecimalPlaces,
         })}
+      </td>
+      <td className="text-right text-muted relative">
+        <div
+          className="cell-background-gradient absolute filled"
+          style={{ width: weight && `${Math.round(weight * 100)}%` }}
+        ></div>
+        <div className="relative">
+          {formatAmount(reserveValueUSD ?? '...', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </div>
       </td>
     </tr>
   );

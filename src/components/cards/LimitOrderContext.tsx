@@ -12,7 +12,8 @@ import {
 } from '../../lib/web3/utils/limitOrders';
 
 interface FormState {
-  amount: string;
+  amountIn: string;
+  amountOut: string;
   limitPrice: string;
   timeAmount: string;
   timePeriod: TimePeriod;
@@ -20,7 +21,7 @@ interface FormState {
   slippage: string;
 }
 interface FormSetState {
-  setAmount: Dispatch<SetStateAction<FormState['amount']>>;
+  setAmountInOut: Dispatch<SetStateAction<[string, string]>>;
   setLimitPrice: Dispatch<SetStateAction<FormState['limitPrice']>>;
   setTimeAmount: Dispatch<SetStateAction<FormState['timeAmount']>>;
   setTimePeriod: Dispatch<SetStateAction<FormState['timePeriod']>>;
@@ -40,27 +41,29 @@ export function LimitOrderContextProvider({
   defaultExecutionType: AllowedLimitOrderTypeKey;
   children: ReactNode;
 }) {
-  const [amount, setAmount] = useState('');
+  const [amountInOut, setAmountInOut] = useState<[string, string]>(['', '']);
   const [limitPrice, setLimitPrice] = useState('');
-  const [timeAmount, setTimeAmount] = useState('28');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('days');
+  const [timeAmount, setTimeAmount] = useState('1');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('hours');
   const [execution, setExecution] = useState(defaultExecutionType);
   const [slippage, setSlippage] = useState('');
 
   const state = useMemo(() => {
+    const [amountIn, amountOut] = amountInOut;
     return {
-      amount,
+      amountIn,
+      amountOut,
       limitPrice,
       timeAmount,
       timePeriod,
       execution,
       slippage,
     };
-  }, [amount, limitPrice, timeAmount, timePeriod, execution, slippage]);
+  }, [amountInOut, limitPrice, timeAmount, timePeriod, execution, slippage]);
 
   const setState = useMemo(() => {
     return {
-      setAmount,
+      setAmountInOut,
       setLimitPrice,
       setTimeAmount,
       setTimePeriod,
@@ -68,7 +71,7 @@ export function LimitOrderContextProvider({
       setSlippage,
     };
   }, [
-    setAmount,
+    setAmountInOut,
     setLimitPrice,
     setTimeAmount,
     setTimePeriod,

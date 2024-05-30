@@ -58,16 +58,17 @@ export interface SelectionModalChild<T> {
   className?: string;
   disabled?: boolean;
   value: T | undefined;
-  open: () => void;
+  open?: () => void;
 }
 export type SelectionModal<T, Tab extends string> = Omit<
   SelectionModalDialog<T, Tab>,
-  'isOpen' | 'setIsOpen'
+  'isOpen' | 'setIsOpen' | 'onChange'
 > & {
   buttonClassName?: string;
   bodyClassName?: string;
   disabled?: boolean;
   ChildComponent: FunctionComponent<SelectionModalChild<T>>;
+  onChange?: SelectionModalDialog<T, Tab>['onChange'];
 };
 export default function SelectionModal<T, Tab extends string>({
   buttonClassName,
@@ -75,6 +76,7 @@ export default function SelectionModal<T, Tab extends string>({
   disabled,
   ChildComponent,
   value,
+  onChange,
   ...modalProps
 }: SelectionModal<T, Tab>) {
   // set modal logic above Dialog to prevent the dialog state from rendering
@@ -96,14 +98,15 @@ export default function SelectionModal<T, Tab extends string>({
           .join(' ')}
         disabled={disabled}
         value={value}
-        open={open}
+        open={onChange && open}
       />
-      {isOpen && (
+      {isOpen && onChange && (
         <SelectionModalDialog<T, Tab>
           className={bodyClassName}
           setIsOpen={setIsOpen}
           isOpen={isOpen}
           value={value}
+          onChange={onChange}
           {...modalProps}
         />
       )}

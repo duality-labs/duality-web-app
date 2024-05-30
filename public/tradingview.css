@@ -1,0 +1,4 @@
+:root {
+  --tv-color-platform-background: var(--page-card, hsl(212deg, 28%, 17%));
+  --tv-color-pane-background: var(--default, hsl(219deg, 40%, 11%));
+}

@@ -275,6 +275,7 @@ export function getLastPrice(
   { tokenA, tokenB }: { tokenA: Token; tokenB: Token }
 ) {
   const lastTickUpdate = events
+    .slice()
     .reverse()
     .find((event): event is DexTickUpdateEvent => {
       return (

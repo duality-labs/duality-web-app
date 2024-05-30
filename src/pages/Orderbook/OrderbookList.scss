@@ -1,14 +1,36 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 
+.orderbook-list__toolbar {
+  .select-input-selection {
+    padding: paddings.$p-2 paddings.$p-3;
+    background-color: var(--page-card);
+    text-align: right;
+    align-self: stretch;
+  }
+}
+
 .orderbook-list {
+  position: relative;
+
   .orderbook-list__table {
     width: 100%;
     font-size: 0.75em;
     color: #f9fafb;
     border-spacing: 0;
-    border-collapse: collapse;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
     th {
       border: 1px solid var(--page-card-border);
+      border-left: none;
+      border-right: none;
+    }
+    td {
+      border: 1px solid transparent;
       border-left: none;
       border-right: none;
     }
@@ -17,6 +39,23 @@
         text-align: left;
       }
     }
+    .active td {
+      background-color: hsla(217, 19%, 27%, 0.275); // var(--page-card-border)
+    }
+    .orderbook-list__table__ticks-top .hovered td,
+    .orderbook-list__table__tick-center.active-top td {
+      border-top-color: var(--text-default);
+    }
+    .orderbook-list__table__ticks-bottom .hovered td,
+    .orderbook-list__table__tick-center.active-bottom td {
+      border-bottom-color: var(--text-default);
+    }
+    .orderbook-list__table__ticks-top,
+    .orderbook-list__table__tick-center,
+    .orderbook-list__table__ticks-bottom {
+      cursor: pointer;
+    }
+
     // add cell spacing
     & {
       th {
@@ -31,9 +70,134 @@
         padding-left: 0;
       }
       // add more spacing on first row to align the spacing for whole table
-      tbody:first-of-type tr:first-child td {
-        padding-top: paddings.$p-3;
+      .table-body-spacer {
+        padding: 0;
+        padding-top: paddings.$p-2;
       }
     }
+
+    td.text-success {
+      color: rgb(38, 128, 45);
+    }
+    td.text-error {
+      color: hsl(1, 66%, 53%);
+    }
+
+    .cell-background-gradient {
+      transition: width ease 0.5s;
+    }
+    .orderbook-list__table__ticks-top .cell-background-gradient {
+      background: linear-gradient(
+        90deg,
+        hsla(0, 84%, 63%, 0.067) 0%,
+        hsla(1, 84%, 62%, 0.259) 100%
+      );
+    }
+    .orderbook-list__table__ticks-bottom .cell-background-gradient {
+      background: linear-gradient(
+        90deg,
+        rgba(38, 128, 27, 0.08) 0%,
+        rgba(38, 129, 26, 0.31) 100%
+      );
+    }
   }
+}
+
+.connection-controls {
+  button {
+    padding: paddings.$p-sm paddings.$p-sm;
+    background-color: var(--page-card);
+
+    &:hover,
+    &:focus {
+      border-color: var(--page-card-border);
+    }
+
+    .button-box {
+      height: 0.1775em;
+    }
+    .bg-green {
+      background-color: rgb(38, 128, 27);
+    }
+    .bg-red {
+      background-color: hsl(1, 66%, 40%);
+    }
+    .button-box {
+      opacity: 0.4;
+    }
+    &.active .button-box {
+      opacity: 1;
+    }
+  }
+  hr {
+    margin: paddings.$p-sm;
+    border-right-width: 0;
+  }
+}
+
+.orderbook-buy-sell-bar {
+  & {
+    justify-content: space-between;
+  }
+  .orderbook-buy-sell-bar_buy-icon,
+  .orderbook-buy-sell-bar_sell-icon {
+    width: 2.4em;
+    text-align: center;
+    border-radius: 0.25rem;
+  }
+  .orderbook-buy-sell-bar_buy-icon {
+    background-color: rgb(38, 128, 27);
+  }
+  .orderbook-buy-sell-bar_sell-icon {
+    background-color: hsl(1, 66%, 40%);
+  }
+  .orderbook-buy-sell-bar_buy-value {
+    color: hsl(125, 54%, 33%);
+  }
+  .orderbook-buy-sell-bar_sell-value {
+    color: hsl(1, 66%, 53%);
+  }
+  .orderbook-buy-sell-bar_buy-bar,
+  .orderbook-buy-sell-bar_sell-bar {
+    border-radius: 0.25rem;
+    opacity: 0.5;
+    transition: width 0.5s ease;
+  }
+  .orderbook-buy-sell-bar_buy-bar {
+    background-color: rgb(38, 128, 27);
+  }
+  .orderbook-buy-sell-bar_sell-bar {
+    background-color: hsl(1, 66%, 40%);
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+.reserves-new {
+  animation: appear 0.5s ease;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.reserves-increase .cell-background {
+  animation: flash 0.5s ease;
+  transition: opacity 0.5s ease;
+  background-color: rgb(38, 128, 27);
+  opacity: 0;
+}
+.reserves-decrease .cell-background {
+  animation: flash 0.5s ease;
+  transition: opacity 0.5s ease;
+  background-color: hsl(1, 66%, 40%);
+  opacity: 0;
 }

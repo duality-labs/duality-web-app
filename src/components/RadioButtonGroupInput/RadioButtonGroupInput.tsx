@@ -43,11 +43,17 @@ function useSelectedButtonBackgroundMove<T extends string | number>(
       if (movingButton && targetButton) {
         movingButton.style.width = `${targetButton.offsetWidth}px`;
         movingButton.style.left = `${targetButton.offsetLeft}px`;
-        if (newValue !== undefined) {
+        if (newValue !== undefined && movingButton.style.opacity !== '0') {
           movingButton.classList.add('transition-ready');
         } else {
           movingButton?.classList.remove('transition-ready');
         }
+        movingButton.style.opacity = '1';
+      }
+      // "remove" button if the target was not found
+      else if (movingButton) {
+        movingButton?.classList.remove('transition-ready');
+        movingButton.style.opacity = '0';
       }
     },
     [value, refsByValue, movingButton]
@@ -72,7 +78,10 @@ function useSelectedButtonBackgroundMove<T extends string | number>(
 interface Props<T extends string | number> {
   className?: string;
   buttonClassName?: string;
-  values: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
+  values:
+    | { readonly [value in T]: ReactNode }
+    | Map<T, ReactNode>
+    | readonly T[];
   value: T;
   onChange: (value: T) => void;
 }
@@ -87,21 +96,24 @@ export default function RadioButtonGroupInput<T extends string | number>({
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove<T>(value);
   const entries = useMemo(() => {
+    const valueIsNumber = typeof value === 'number';
     return Array.isArray(values)
-      ? values.map<[T, string]>((value) => [value, `${value}`])
+      ? values.filter(Boolean).map<[T, string]>((value) => [value, `${value}`])
       : values instanceof Map
       ? Array.from(values.entries())
       : (Object.entries(values).map(([value, description]) => [
-          value,
+          valueIsNumber ? Number(value) : value,
           description,
         ]) as [T, string][]);
-  }, [values]);
+  }, [value, values]);
   const selectedIndex = entries.findIndex(
     ([entryValue]) => entryValue === value
   );
   const includedIndexes = useMemo(() => {
     return (
       entries
+        // do not display falsy description buttons
+        .filter(([_key, value]) => !!value)
         .map((_, index, entries) => {
           // cumulate weightings
           let result = 0;
@@ -155,6 +167,9 @@ export default function RadioButtonGroupInput<T extends string | number>({
         const previousIndex = includedIndexes.includes(index - 1);
         const currentIndex = includedIndexes.includes(index);
         const nextIndex = includedIndexes.includes(index + 1);
+
+        // skip those with no description
+        if (!description) return [];
 
         // include button if required or if excluding it
         // will not reduce the number of shown buttons
