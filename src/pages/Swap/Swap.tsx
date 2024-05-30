@@ -25,7 +25,7 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
-import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import { useRealtimePrice } from '../../components/stats/hooks';
 
 import { useSimulatedLimitOrderResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -119,11 +119,9 @@ function Swap() {
   const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
 
   // update simulation whenever price changes
-  // todo: replace with something more lightweight if reliably available
-  //       eg. using the stats endpoint of last known price of last 48 hours
-  //       which will require reasonable handling when recent price is unknown
-  const { data: pairTicks, meta } = useTokenPairMapLiquidity([denomA, denomB]);
-  const pairHasLiquidity = !!pairTicks?.reduce((acc, set) => acc + set.size, 0);
+  const [timeUnix, lastPrice] = useRealtimePrice(tokenA, tokenB);
+  // note: it is an assumption that there is liquidity if there is a price
+  const pairHasLiquidity = !!lastPrice;
 
   // create reusable swap msg
   const swapMsg = useMemo(() => {
@@ -151,7 +149,7 @@ function Swap() {
     refetch: simulationRefetch,
   } = useSimulatedLimitOrderResult(swapMsg, {
     keepPreviousData: Number(swapMsg?.amount_in) > 0,
-    memo: `height of ${meta?.height}`,
+    memo: `time of ${timeUnix}`,
     // allow using IoC orders for simulation if FoK orders fail
     workaroundErrorForFoK: true,
   });
