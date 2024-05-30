@@ -54,6 +54,33 @@ export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
       `v1/liquidity/pair?token_a=${encodedA}&token_b=${encodedB}`,
     {
       ...tokenPairMapLiquidityOpts,
+      // translate page data into SSE data for consistent processing
+      getDataRowsFromResponse: useCallback(
+        (dataPage: LiquidityPage<BaseLiquidityDataRow>): DataRow[] => {
+          return tokenIdA && tokenIdB
+            ? [
+                ...(dataPage.data.reserves_a_b || []).map((row) => {
+                  return {
+                    block_tmstmp: 0,
+                    tick_index: row.tick_index,
+                    reserves: row.reserves,
+                    token_in: tokenIdA,
+                  };
+                }),
+                ...(dataPage.data.reserves_b_a || []).map((row) => {
+                  return {
+                    block_tmstmp: 0,
+                    tick_index: row.tick_index,
+                    reserves: row.reserves,
+                    token_in: tokenIdB,
+                  };
+                }),
+              ]
+            : [];
+        },
+        [tokenIdA, tokenIdB]
+      ),
+      // separate the SSE updates into their respective data sets
       separateUpdates: useCallback(
         (dataRows: DataRow[]) => {
           const dataRowsTokenA: DataRow[] = [];
