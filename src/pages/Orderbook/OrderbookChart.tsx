@@ -186,8 +186,8 @@ export default function OrderBookChart({
     ) => {
       const url = new URL(
         `v1/timeseries/price?${[
-          `token_a=${encodeURIComponent(symbolB)}`,
-          `token_b=${encodeURIComponent(symbolA)}`,
+          `token_a=${encodeURIComponent(symbolA)}`,
+          `token_b=${encodeURIComponent(symbolB)}`,
           `resolution=${resolutionMap[`${resolution}`]}`,
         ].join('&')}`,
         `${REACT_APP__INDEXER_API}`

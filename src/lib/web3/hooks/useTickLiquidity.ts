@@ -30,7 +30,7 @@ function removeZeroLiquidityValues(row: DataRow) {
 const tokenPairMapLiquidityOpts = {
   // remove entries of value 0 from the accumulated map, they are not used
   removeEntryMatch: removeZeroLiquidityValues,
-  getDataUpdateKey: (dataRow: DataRow) => dataRow.tick_index,
+  getDataUpdateKey: (dataRow: DataRow) => -dataRow.tick_index,
   getDataUpdateValue: (dataRow: DataRow) => Number(dataRow.reserves),
 };
 // add convenience method to fetch liquidity maps of a pair
@@ -59,17 +59,19 @@ export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
         (dataPage: LiquidityPage<BaseLiquidityDataRow>): DataRow[] => {
           return tokenIdA && tokenIdB
             ? [
-                ...(dataPage.data.reserves_a_b || []).map((row) => {
+                ...(dataPage.data.reserves_b_a || []).map((row) => {
                   return {
-                    block_tmstmp: 0,
+                    // set a non-zero (existing) timestamp to be overwritten
+                    block_tmstmp: 1,
                     tick_index: row.tick_index,
                     reserves: row.reserves,
                     token_in: tokenIdA,
                   };
                 }),
-                ...(dataPage.data.reserves_b_a || []).map((row) => {
+                ...(dataPage.data.reserves_a_b || []).map((row) => {
                   return {
-                    block_tmstmp: 0,
+                    // set a non-zero (existing) timestamp to be overwritten
+                    block_tmstmp: 1,
                     tick_index: row.tick_index,
                     reserves: row.reserves,
                     token_in: tokenIdB,

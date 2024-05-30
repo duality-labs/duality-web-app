@@ -165,7 +165,7 @@ function getRealtimePricePath(tokenA: Token, tokenB: Token) {
   ].join('&')}`;
 }
 function getLastPriceTickIndexValue({ close }: PriceRow): number {
-  return close;
+  return -close;
 }
 function useRealtimePriceTickIndex(
   tokenA: Token | undefined,
@@ -266,7 +266,7 @@ export function useStatDisplayPrice(
     ({ open, high, low, close }: StatsPriceRowPoint): number[] => {
       return [
         tickIndexToDisplayPrice(
-          new BigNumber({ open, high, low, close }[attribute]),
+          new BigNumber({ open, high, low, close }[attribute]).negated(),
           tokenA,
           tokenB
         )?.toNumber() || 0,
