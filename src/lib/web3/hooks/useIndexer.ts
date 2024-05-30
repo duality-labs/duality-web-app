@@ -33,9 +33,7 @@ export interface BaseLiquiditySSEPage extends BaseLiquidityDataRow {
 export type LiquidityPage<
   LiquidityDataRow extends BaseLiquidityDataRow = BaseLiquidityDataRow
 > = {
-  data:
-    | { reserves_b_a: LiquidityDataRow[] }
-    | { reserves_b_a: LiquidityDataRow[]; reserves_a_b: LiquidityDataRow[] };
+  data: { reserves_b_a: LiquidityDataRow[]; reserves_a_b?: LiquidityDataRow[] };
   total: number;
 };
 
