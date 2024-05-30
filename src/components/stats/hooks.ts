@@ -10,7 +10,7 @@ import {
 } from './utils';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 import {
   BaseStatsDataSSERow,
   BaseStatsDataSSEPage,
@@ -161,21 +161,29 @@ function getRealtimePricePath(tokenA: Token, tokenB: Token) {
     'resolution=second',
   ].join('&')}`;
 }
-function getRealtimePriceValue(row: PriceRow): number {
-  return tickIndexToPrice(new BigNumber(row.close)).toNumber();
-}
 export function useRealtimePrice(
   tokenA: Token | undefined,
   tokenB: Token | undefined
 ): [timeUnix: number | null | undefined, priceBtoA: number | null | undefined] {
-  // fetch most recent value with a page limit
-  const url = tokenA && tokenB && getStatPricePath(tokenA, tokenB);
+  const getRealtimePriceValue = useCallback(
+    (row: PriceRow): number => {
+      return (
+        tickIndexToDisplayPrice(
+          new BigNumber(row.close),
+          tokenA,
+          tokenB
+        )?.toNumber() || 0
+      );
+    },
+    [tokenA, tokenB]
+  );
 
+  // fetch most recent value as a single page request
   const { data: latestDataSet } = useFetchSingleDataSetFromIndexer<
     StatsPage<StatsPriceRowPoint>,
     BaseStatsDataSSEPage<StatsPriceRowPoint>,
     Map<number, number>
-  >(url, {
+  >(tokenA && tokenB && getStatPricePath(tokenA, tokenB), {
     getDataRowsFromResponse: getDataRowsFromResponse as (
       restResponse: StatsPage
     ) => BaseStatsDataSSEPage<StatsPriceRowPoint>[],
@@ -183,7 +191,7 @@ export function useRealtimePrice(
       (dataUpdate: BaseStatsDataSSEPage<StatsPriceRowPoint>): number => {
         return getRealtimePriceValue(dataUpdate.current);
       },
-      []
+      [getRealtimePriceValue]
     ),
   });
 
@@ -193,6 +201,7 @@ export function useRealtimePrice(
       .at(-1);
   }, [latestDataSet]);
 
+  // fetch most recent values with a subscription
   const { data: subscriptionDataSet } =
     useIndexerStreamLastUpdateOfSingleDataSet<
       TimeSeriesPage<TimeseriesPriceRowPoint>,
@@ -231,12 +240,14 @@ export function useStatPrice(
   const getStatPriceValues = useCallback(
     ({ open, high, low, close }: StatsPriceRowPoint): number[] => {
       return [
-        tickIndexToPrice(
-          new BigNumber({ open, high, low, close }[attribute])
-        ).toNumber(),
+        tickIndexToDisplayPrice(
+          new BigNumber({ open, high, low, close }[attribute]),
+          tokenA,
+          tokenB
+        )?.toNumber() || 0,
       ];
     },
-    [attribute]
+    [attribute, tokenA, tokenB]
   );
   const [timeUnix, prices, priceDiffs] = useStatData<StatsPriceRowPoint>(
     tokenA,
