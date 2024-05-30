@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { Token, TokenID } from '../utils/tokens';
 import {
-  BaseLiquiditySSEPage,
+  BaseLiquidityPairsSSEPage,
   useIndexerStreamOfSingleDataSet,
 } from './useIndexer';
 import { useTokenByDenom, useUniqueDenoms } from './useDenomClients';
@@ -14,12 +14,17 @@ export type TokenPairReserves = [
   reserves0: number,
   reserves1: number
 ];
-interface DataRow extends BaseLiquiditySSEPage {
-  block_tmstmp: number;
+interface LiquidityPairData {
   token_a: string;
   token_b: string;
   tvl_a: string;
   tvl_b: string;
+}
+
+interface DataRow extends BaseLiquidityPairsSSEPage, LiquidityPairData {}
+
+interface LiquidityRestResponse {
+  data: LiquidityPairData[];
 }
 
 type TokenPairsState = {
@@ -27,11 +32,25 @@ type TokenPairsState = {
   error: Error | null;
 };
 
+function getLiquidityDataFromResponse(restResponse: LiquidityRestResponse) {
+  return restResponse.data.map((liquidityPairData) => {
+    // console.log('getLiquidityDataFromResponse',Date.now(),  liquidityPairData)
+    return {
+      ...liquidityPairData,
+      // add unknown block data height
+      block_tmstmp: 0,
+      block_hght: 0,
+    };
+  });
+}
+
 export default function useTokenPairs(): TokenPairsState {
   const { data, error } = useIndexerStreamOfSingleDataSet<
+    LiquidityRestResponse,
     DataRow,
     Map<string, TokenPairReserves>
   >('v1/liquidity/pairs', {
+    getDataRowsFromResponse: getLiquidityDataFromResponse,
     getDataUpdateKey: useCallback(
       (dataRow: DataRow) => `${dataRow.token_a}<>${dataRow.token_b}`,
       []
