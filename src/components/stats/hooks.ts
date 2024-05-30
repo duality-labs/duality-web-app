@@ -177,6 +177,7 @@ function useRealtimePriceTickIndex(
   // fetch most recent value with a page limit
   const url = tokenA && tokenB && getStatPricePath(tokenA, tokenB);
 
+  // fetch most recent value as a single page request
   const { data: latestDataSet } = useFetchSingleDataSetFromIndexer<
     StatsPage<StatsPriceRowPoint>,
     BaseStatsDataSSEPage<StatsPriceRowPoint>,
@@ -199,6 +200,7 @@ function useRealtimePriceTickIndex(
       .at(-1);
   }, [latestDataSet]);
 
+  // fetch most recent values with a subscription
   const { data: subscriptionDataSet } =
     useIndexerStreamLastUpdateOfSingleDataSet<
       TimeSeriesPage<TimeseriesPriceRowPoint>,

@@ -25,7 +25,7 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
-import { useRealtimePrice } from '../../components/stats/hooks';
+import { useRealtimeBasePrice } from '../../components/stats/hooks';
 
 import { useSimulatedLimitOrderResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -119,7 +119,7 @@ function Swap() {
   const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
 
   // update simulation whenever price changes
-  const [timeUnix, lastPrice] = useRealtimePrice(tokenA, tokenB);
+  const [timeUnix, lastPrice] = useRealtimeBasePrice(tokenA, tokenB);
   // note: it is an assumption that there is liquidity if there is a price
   const pairHasLiquidity = !!lastPrice;
 
