@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
-import useSWR from 'swr';
 
 import {
   TimeSeriesRow,
@@ -16,10 +15,17 @@ import {
   BaseStatsDataSSERow,
   BaseStatsDataSSEPage,
   useIndexerStreamLastUpdateOfSingleDataSet,
+  StatsPage,
+  TimeSeriesPage,
+  useFetchSingleDataSetFromIndexer,
 } from '../../lib/web3/hooks/useIndexer';
 
-const { REACT_APP__INDEXER_API = '', REACT_APP__INDEXER_API_KEY = '' } =
-  import.meta.env;
+// return data "rows", as just the current response as latest data row
+function getDataRowsFromResponse(
+  restResponse: StatsPage
+): BaseStatsDataSSEPage[] {
+  return [restResponse.data];
+}
 
 type BaseStatsSSEPoint = BaseStatsDataSSEPage['current'];
 function useLastUpdateOfIndexerData<StatsSSEPoint extends BaseStatsSSEPoint>(
@@ -28,12 +34,12 @@ function useLastUpdateOfIndexerData<StatsSSEPoint extends BaseStatsSSEPoint>(
   getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues: (values: StatsSSEPoint) => number[]
 ): TimeSeriesRow[] | null | undefined {
-  const urlPath = tokenA && tokenB && getIndexerPath(tokenA, tokenB);
-  const url = urlPath && `${REACT_APP__INDEXER_API}/${urlPath}`;
+  const url = tokenA && tokenB && getIndexerPath(tokenA, tokenB);
   const update = useIndexerStreamLastUpdateOfSingleDataSet<
+    StatsPage,
     BaseStatsDataSSEPage,
     Map<number, BaseStatsDataSSERow>
-  >(url);
+  >(url, { getDataRowsFromResponse });
 
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
     const data = update.data;
@@ -140,7 +146,7 @@ interface PriceRow {
 }
 interface TimeseriesPriceRowPoint extends PriceRow {
   block_tmstmp: number;
-  block_height: number;
+  block_hght: number;
 }
 interface StatsPriceRowPoint extends PriceRow {
   tmstmp: number;
@@ -149,51 +155,73 @@ interface StatsPriceRowPoint extends PriceRow {
 function getRealtimePricePath(tokenA: Token, tokenB: Token) {
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
-  return `timeseries/price?token_a=${denomA}&token_b=${denomB}&resolution=second`;
+  return `v1/timeseries/price?${[
+    `token_a=${denomA}`,
+    `token_b=${denomB}`,
+    'resolution=second',
+  ].join('&')}`;
 }
-function getRealtimePriceValue({ close }: PriceRow): number[] {
-  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+function getRealtimePriceValue(row: PriceRow): number {
+  return tickIndexToPrice(new BigNumber(row.close)).toNumber();
 }
 export function useRealtimePrice(
   tokenA: Token | undefined,
   tokenB: Token | undefined
 ): [timeUnix: number | null | undefined, priceBtoA: number | null | undefined] {
   // fetch most recent value with a page limit
-  const url = tokenA && tokenB && getRealtimePricePath(tokenA, tokenB);
-  const { data: latestDataUpdate } = useSWR<{
-    data: TimeseriesPriceRowPoint[];
-  }>(url ? [url, 'fetch'] : null, () =>
-    fetch(`${REACT_APP__INDEXER_API}/${url}&offset=0&limit=1`, {
-      headers: {
-        auth_token: `${REACT_APP__INDEXER_API_KEY}`,
-      },
-    }).then((response) => response.json())
-  );
+  const url = tokenA && tokenB && getStatPricePath(tokenA, tokenB);
 
-  const mostRecentUpdate = useStatData<StatsPriceRowPoint>(
-    tokenA,
-    tokenB,
-    getRealtimePricePath,
-    getRealtimePriceValue
-  );
+  const { data: latestDataSet } = useFetchSingleDataSetFromIndexer<
+    StatsPage<StatsPriceRowPoint>,
+    BaseStatsDataSSEPage<StatsPriceRowPoint>,
+    Map<number, number>
+  >(url, {
+    getDataRowsFromResponse: getDataRowsFromResponse as (
+      restResponse: StatsPage
+    ) => BaseStatsDataSSEPage<StatsPriceRowPoint>[],
+    getDataUpdateValue: useCallback(
+      (dataUpdate: BaseStatsDataSSEPage<StatsPriceRowPoint>): number => {
+        return getRealtimePriceValue(dataUpdate.current);
+      },
+      []
+    ),
+  });
+
+  const latestDataUpdate = useMemo(() => {
+    return Array.from(latestDataSet?.entries() || [])
+      .sort((a, b) => a[0] - b[0])
+      .at(-1);
+  }, [latestDataSet]);
+
+  const { data: subscriptionDataSet } =
+    useIndexerStreamLastUpdateOfSingleDataSet<
+      TimeSeriesPage<TimeseriesPriceRowPoint>,
+      TimeseriesPriceRowPoint,
+      Map<number, number>
+    >(tokenA && tokenB && getRealtimePricePath(tokenA, tokenB), {
+      disableREST: true,
+      getDataUpdateValue: getRealtimePriceValue,
+    });
+
+  const mostRecentUpdate = useMemo(() => {
+    return Array.from(subscriptionDataSet?.entries() || [])
+      .sort((a, b) => a[0] - b[0])
+      .at(-1);
+  }, [subscriptionDataSet]);
+
   // read data from latest update or last fetched value or return null
-  const [timeUnix, lastRow] = mostRecentUpdate.find((v) => v)
-    ? mostRecentUpdate
-    : latestDataUpdate?.data[0]
-    ? [
-        latestDataUpdate.data[0].block_tmstmp,
-        getRealtimePriceValue(latestDataUpdate.data[0]),
-      ]
-    : [null, null, null];
-  // return single values from data
-  return [timeUnix, lastRow?.[0]];
+  return (
+    mostRecentUpdate ||
+    latestDataUpdate ||
+    (latestDataSet ? [null, null] : [undefined, undefined])
+  );
 }
 
 // Price
 function getStatPricePath(tokenA: Token, tokenB: Token) {
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
-  return `stats/price?token_a=${denomA}&token_b=${denomB}`;
+  return `v1/stats/price?token_a=${denomA}&token_b=${denomB}`;
 }
 export function useStatPrice(
   tokenA: Token,
@@ -229,7 +257,7 @@ type StatsTvlRowPoint = {
 function getStatTvlPath(tokenA: Token, tokenB: Token) {
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
-  return `stats/tvl?token_a=${denomA}&token_b=${denomB}`;
+  return `v1/stats/tvl?token_a=${denomA}&token_b=${denomB}`;
 }
 function getStatTvlValues(row: StatsTvlRowPoint): number[] {
   return [Number(row.tvl_a), Number(row.tvl_b)];
@@ -258,7 +286,7 @@ type StatsVolumeRowPoint = {
 function getStatVolumePath(tokenA: Token, tokenB: Token) {
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
-  return `stats/volume?token_a=${denomA}&token_b=${denomB}`;
+  return `v1/stats/volume?token_a=${denomA}&token_b=${denomB}`;
 }
 function getStatVolumeValues(row: StatsVolumeRowPoint): number[] {
   return [Number(row.swap_volume_a), Number(row.swap_volume_b)];
@@ -286,7 +314,7 @@ type StatsVolatilityRowPoint = {
 function getStatVolatilityPath(tokenA: Token, tokenB: Token) {
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
-  return `stats/volatility?token_a=${denomA}&token_b=${denomB}`;
+  return `v1/stats/volatility?token_a=${denomA}&token_b=${denomB}`;
 }
 function getStatVolatilityValues(row: StatsVolatilityRowPoint): number[] {
   return [Number(row.volatility)];

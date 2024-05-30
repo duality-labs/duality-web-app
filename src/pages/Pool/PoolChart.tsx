@@ -11,6 +11,7 @@ import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
 import {
   AccumulatorOptions,
   BaseTimeSeriesSSERow,
+  TimeSeriesPage,
   useIndexerStreamOfSingleDataSet,
 } from '../../lib/web3/hooks/useIndexer';
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -117,12 +118,12 @@ function getDataResolution(
   }
 }
 
-function useTimeSeriesData<TimeSeriesSSERow extends BaseTimeSeriesSSERow>(
+function useTimeSeriesData<TimeSeriesDataRow extends BaseTimeSeriesSSERow>(
   pathPart: string,
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  opts?: AccumulatorOptions<TimeSeriesSSERow>
+  opts?: AccumulatorOptions<TimeSeriesDataRow>
 ) {
   const urlPath = useMemo(() => {
     const denomA = getIndexerTokenPathPart(tokenA);
@@ -137,7 +138,8 @@ function useTimeSeriesData<TimeSeriesSSERow extends BaseTimeSeriesSSERow>(
     ].join('&')}`;
   }, [pathPart, tokenA, tokenB, timePeriodKey]);
   const stream = useIndexerStreamOfSingleDataSet<
-    TimeSeriesSSERow,
+    TimeSeriesPage<TimeSeriesDataRow>,
+    TimeSeriesDataRow,
     Map<number, number[]>
   >(urlPath, opts);
 

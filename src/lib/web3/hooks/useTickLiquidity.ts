@@ -6,7 +6,9 @@ import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 
 import {
+  BaseLiquidityDataRow,
   BaseLiquiditySSEPage,
+  LiquidityPage,
   StaleWhileRevalidateStreamState,
   useIndexerStreamOfDualDataSet,
 } from './useIndexer';
@@ -42,7 +44,11 @@ export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
   const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer
-  return useIndexerStreamOfDualDataSet<DataRow, ReserveDataSet>(
+  return useIndexerStreamOfDualDataSet<
+    LiquidityPage<BaseLiquidityDataRow>,
+    DataRow,
+    ReserveDataSet
+  >(
     encodedA &&
       encodedB &&
       `v1/liquidity/pair?token_a=${encodedA}&token_b=${encodedB}`,
