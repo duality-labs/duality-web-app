@@ -27,7 +27,6 @@ import {
   IndexerPage,
   IndexerStreamAccumulateSingleDataSet,
 } from '../../lib/web3/hooks/useIndexer';
-import { days, hours, minutes, seconds } from '../../lib/utils/time';
 
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
@@ -177,17 +176,6 @@ export default function OrderBookChart({
       '1D': 'day', // day
     };
 
-    const resolutionInMsMap: {
-      [tradingViewResolution: string]: number;
-    } = {
-      '1S': 1 * seconds,
-      '1': 1 * minutes,
-      '5': 5 * minutes,
-      '10': 10 * minutes,
-      '60': 1 * hours,
-      '1D': 1 * days,
-    };
-
     // keep track of data subscription state here
     type FetchID = string;
     type SubscriberUUID = string;
@@ -269,6 +257,7 @@ export default function OrderBookChart({
             supported_resolutions: supportedResolutions,
             timezone: 'Etc/UTC',
             type: 'crypto',
+            has_empty_bars: true,
           };
           setTimeout(() => {
             onSymbolResolvedCallback(symbolInfo);
@@ -337,46 +326,11 @@ export default function OrderBookChart({
                   if (height > (knownHeights.get(fetchID) ?? 0)) {
                     knownHeights.set(fetchID, height);
                   }
-                  const resolutionInMs = resolutionInMsMap[resolution];
-                  const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
-                    (acc, data) => {
-                      const bar = getBarFromTimeSeriesRow(data);
-                      // fill in any gaps with the last close price
-                      const lastBar = acc[acc.length - 1];
-                      const extraBars: Bar[] = [];
-                      if (lastBar && resolutionInMs) {
-                        let lastTimestamp = lastBar.time;
-                        while (lastTimestamp + resolutionInMs < bar.time) {
-                          lastTimestamp += resolutionInMs;
-                          extraBars.push({
-                            time: lastTimestamp,
-                            open: lastBar.close,
-                            high: lastBar.close,
-                            low: lastBar.close,
-                            close: lastBar.close,
-                          });
-                        }
-                      }
-                      return [...acc, ...extraBars, bar];
-                    },
-                    []
-                  );
-                  // fill in any gaps (between pages) to the earliest known bars
-                  const previousBar = firstBars.get(fetchID);
-                  const currentLastBar = bars.at(-1);
-                  if (previousBar && currentLastBar) {
-                    let lastTimestamp = currentLastBar.time;
-                    while (lastTimestamp + resolutionInMs < previousBar.time) {
-                      lastTimestamp += resolutionInMs;
-                      bars.push({
-                        time: lastTimestamp,
-                        open: currentLastBar.close,
-                        high: currentLastBar.close,
-                        low: currentLastBar.close,
-                        close: currentLastBar.close,
-                      });
-                    }
-                  }
+                  // note: the data needs to be in chronological order
+                  // and our API delivers results in reverse-chronological order
+                  const bars: Bar[] = Array.from(data)
+                    .reverse()
+                    .map(getBarFromTimeSeriesRow);
                   // record earliest bar info of this fetch
                   const firstBar = bars.at(0);
                   if (
@@ -445,26 +399,11 @@ export default function OrderBookChart({
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
               onUpdate: (dataUpdates) => {
                 let lastBar = lastBars.get(fetchID);
-                const resolutionInMs = resolutionInMsMap[resolution];
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
                 const chronologicalUpdates = dataUpdates.slice().reverse();
                 for (const row of chronologicalUpdates) {
                   const bar = getBarFromTimeSeriesRow(row);
-                  // add extra empty bars if there would be a gap in time
-                  if (lastBar && resolutionInMs) {
-                    let lastTimestamp = lastBar.time;
-                    while (lastTimestamp + resolutionInMs < bar.time) {
-                      lastTimestamp += resolutionInMs;
-                      onRealtimeCallback({
-                        time: lastTimestamp,
-                        open: lastBar.close,
-                        high: lastBar.close,
-                        low: lastBar.close,
-                        close: lastBar.close,
-                      });
-                    }
-                  }
                   // add only bars that are new or updates to last timestamp
                   if (!lastBar || bar.time >= lastBar.time) {
                     onRealtimeCallback(bar);
