@@ -224,6 +224,7 @@ export default function OrderBookChart({
             supported_resolutions: supportedResolutions,
             timezone: 'Etc/UTC',
             type: 'crypto',
+            has_empty_bars: true,
           };
           setTimeout(() => {
             onSymbolResolvedCallback(symbolInfo);
@@ -293,47 +294,9 @@ export default function OrderBookChart({
             {
               onCompleted: async (data) => {
                 stream.unsubscribe();
-                const resolutionInMs = resolutionInMsMap[resolution];
                 // the API is not strictly ordered: it must be re-sorted
                 const sortedData = Array.from(data).sort((a, b) => a[0] - b[0]);
-                const bars: Bar[] = sortedData.reduce<Bar[]>((acc, data) => {
-                  const bar = getBarFromTimeSeriesRow(data);
-                  // fill in any gaps with the last close price
-                  const lastBar = acc[acc.length - 1];
-                  const extraBars: Bar[] = [];
-                  if (lastBar && resolutionInMs) {
-                    let lastTimestamp = lastBar.time;
-                    // append closes from last bar until this bar
-                    while (lastTimestamp + resolutionInMs < bar.time) {
-                      lastTimestamp += resolutionInMs;
-                      extraBars.push({
-                        time: lastTimestamp,
-                        open: lastBar.close,
-                        high: lastBar.close,
-                        low: lastBar.close,
-                        close: lastBar.close,
-                      });
-                    }
-                  }
-                  return [...acc, ...extraBars, bar];
-                }, []);
-                // fill in any gaps (between pages) to the earliest known bars
-                const previousBar = firstBars.get(fetchID);
-                const currentLastBar = bars.at(-1);
-                if (previousBar && currentLastBar) {
-                  let lastTimestamp = currentLastBar.time;
-                  // append closes from this set to the earliest existing set
-                  while (lastTimestamp + resolutionInMs < previousBar.time) {
-                    lastTimestamp += resolutionInMs;
-                    bars.push({
-                      time: lastTimestamp,
-                      open: currentLastBar.close,
-                      high: currentLastBar.close,
-                      low: currentLastBar.close,
-                      close: currentLastBar.close,
-                    });
-                  }
-                }
+                const bars: Bar[] = sortedData.map(getBarFromTimeSeriesRow);
                 // record earliest bar info of this fetch
                 const firstBar = bars.at(0);
                 if (
@@ -381,7 +344,7 @@ export default function OrderBookChart({
             },
             {
               disableSSE: true,
-              ignoreInitialData404s: !!lastBars.get(fetchID),
+              ignoreInitialData404s: true,
               getDataUpdateKey: (dataRow) => dataRow.block_tmstmp,
               getDataUpdateValue: (dataRow) => [
                 Number(dataRow.open),
