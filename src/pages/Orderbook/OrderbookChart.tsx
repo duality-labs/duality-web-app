@@ -329,7 +329,7 @@ export default function OrderBookChart({
             },
             {
               disableSSE: true,
-              ignoreInitialData404s: !!lastBars.get(fetchID),
+              ignoreInitialData404s: true,
               getDataUpdateKey: (dataRow) => dataRow.block_tmstmp,
               getDataUpdateValue: (dataRow) => [
                 Number(dataRow.open),
