@@ -112,6 +112,7 @@ jobs:
         run: npm run build -- --mode testnet && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+          REACT_APP__INDEXER_API_KEY: ${{ secrets.REACT_APP__INDEXER_API_KEY }}
 
       - name: Deploy testnet to Netlify
         id: netlify_deploy_testnet
@@ -140,6 +141,7 @@ jobs:
         run: npm run build -- --mode beta && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+          REACT_APP__INDEXER_API_KEY: ${{ secrets.REACT_APP__INDEXER_API_KEY }}
 
       - name: Deploy beta to Netlify
         id: netlify_deploy_beta
