@@ -217,6 +217,12 @@ export default function OrderBookChart({
       return url;
     };
 
+    // skip if token pairs list is not yet ready
+    // this can cause multiple restarts of the charts until it is ready
+    if (!tokenPairs.length) {
+      return;
+    }
+
     // don't create options unless ID requirements are satisfied
     if (chartRef.current && tokenPairID && tokenIdA && tokenIdB) {
       const datafeed: IBasicDataFeed = {
