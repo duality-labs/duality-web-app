@@ -328,8 +328,8 @@ function Orderbook() {
             <div className="flex col page-card p-0">
               {tokenA && tokenB && (
                 <OrderBookChart
-                  tokenA={tokenB}
-                  tokenB={tokenA}
+                  tokenA={tokenA}
+                  tokenB={tokenB}
                   priceIndication={
                     priceIndication !== currentPrice
                       ? priceIndication

@@ -46,7 +46,10 @@ import { useCancelLimitOrder } from './useCancelLimitOrder';
 import useOnUserDexMsg from '../../lib/web3/hooks/useOnUserDexMsg';
 
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import {
+  tickIndexToDisplayPrice,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 
 import './OrderbookFooter.scss';
 
@@ -249,7 +252,7 @@ function SideColumn({
     return (
       <td>
         {tokenA && tokenB ? (
-          attributes.TokenIn === getTokenId(tokenA) ? (
+          attributes.TokenIn === getTokenId(tokenB) ? (
             <span className="text-success">Buy</span>
           ) : (
             <span className="text-danger">Sell</span>
@@ -284,20 +287,22 @@ function PriceColumn({
       reservesOut?.isGreaterThan(0) ? (
         // show actual traded price
         formatCurrency(
-          !isOrdered
+          isOrdered
             ? reservesOut.dividedBy(reservesIn).toNumber()
             : reservesIn.dividedBy(reservesOut).toNumber()
         )
       ) : (
         // show order limit price
         <div className="text-muted">
-          {isOrdered ? '<' : '>'}
+          {!isOrdered ? '<' : '>'}
           {formatCurrency(
-            tickIndexToPrice(
-              new BigNumber(isOrdered ? 1 : -1).multipliedBy(
+            tickIndexToDisplayPrice(
+              new BigNumber(!isOrdered ? 1 : -1).multipliedBy(
                 getPlaceLimitOrderEvent(tx)?.attributes.LimitTick ?? NaN
-              )
-            ).toNumber()
+              ),
+              context.tokenA,
+              context.tokenB
+            )?.toNumber() || ''
           )}
         </div>
       )}

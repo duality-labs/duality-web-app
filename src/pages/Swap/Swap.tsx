@@ -72,7 +72,7 @@ function Swap() {
   const navigate = useNavigate();
 
   // change tokens to match pathname
-  const match = useMatch('/swap/:tokenA/:tokenB');
+  const match = useMatch('/swap/:tokenB/:tokenA');
 
   // get tokenA and tokenB from symbols of known token pair denoms
   const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);

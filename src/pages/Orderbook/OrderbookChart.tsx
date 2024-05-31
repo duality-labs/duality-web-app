@@ -158,7 +158,7 @@ export default function OrderBookChart({
   // tokenPairID is made of symbols, which is different to token paths
   const tokenPairID = useMemo(() => {
     if (tokenA && tokenB) {
-      return `${tokenB.symbol}/${tokenA.symbol}`;
+      return `${tokenA.symbol}/${tokenB.symbol}`;
     }
   }, [tokenA, tokenB]);
 
@@ -221,8 +221,8 @@ export default function OrderBookChart({
     ) => {
       const url = new URL(
         `v1/timeseries/price?${[
-          `token_a=${encodeURIComponent(symbolB)}`,
-          `token_b=${encodeURIComponent(symbolA)}`,
+          `token_a=${encodeURIComponent(symbolA)}`,
+          `token_b=${encodeURIComponent(symbolB)}`,
           `resolution=${resolutionMap[`${resolution}`]}`,
         ].join('&')}`,
         `${REACT_APP__INDEXER_API}`

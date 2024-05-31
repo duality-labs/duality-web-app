@@ -1355,7 +1355,7 @@ export default function PoolManagement({
                     <PriceUSDCard token={tokenB} />
                     <div className="row flex-centered px-4">
                       {estimatedPairPriceString
-                        ? `~${estimatedPairPriceString} ${tokenA.symbol}/${tokenB.symbol}`
+                        ? `~${estimatedPairPriceString} ${tokenB.symbol}/${tokenA.symbol}`
                         : estimatedPairPriceResponse.isValidating
                         ? '...'
                         : ''}
@@ -1402,8 +1402,8 @@ export default function PoolManagement({
                         </div>
                         {tokenA && tokenB && (
                           <div>
-                            {tokenA.display.toUpperCase()} per{' '}
-                            {tokenB.display.toUpperCase()}
+                            {tokenB.display.toUpperCase()} per{' '}
+                            {tokenA.display.toUpperCase()}
                           </div>
                         )}
                       </div>

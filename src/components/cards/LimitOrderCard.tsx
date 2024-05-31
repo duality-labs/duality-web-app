@@ -267,8 +267,8 @@ function LimitOrder({
   const buyMode = modeTab === 'Buy';
   const [denomA, denomB] = [getTokenId(tokenA), getTokenId(tokenB)];
 
-  const tokenIn = !buyMode ? tokenB : tokenA;
-  const tokenOut = buyMode ? tokenB : tokenA;
+  const tokenIn = !buyMode ? tokenA : tokenB;
+  const tokenOut = buyMode ? tokenA : tokenB;
   const denomIn = getTokenId(tokenIn);
   const { data: userBalanceTokenIn, isLoading: isLoadingUserBalanceTokenIn } =
     useBankBalanceBaseAmount(denomIn);
@@ -996,7 +996,7 @@ function LimitOrder({
                 : '-'
             )
           )}
-          suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
+          suffix={tokenA && tokenB && `${tokenB.symbol} per ${tokenA.symbol}`}
         />
       </div>
       {warning ? (
