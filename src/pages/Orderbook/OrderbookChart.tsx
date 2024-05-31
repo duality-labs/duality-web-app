@@ -149,7 +149,7 @@ export default function OrderBookChart({
     ] as ResolutionString[];
 
     const resolutionMap: {
-      [tradingViewResolution: string]: TimeSeriesResolution;
+      [tradingViewResolution: ResolutionString[number]]: TimeSeriesResolution;
     } = {
       '1S': 'second', // second
       '1': 'minute', // minute
@@ -350,7 +350,8 @@ export default function OrderBookChart({
         ) => {
           const fetchID = getFetchID(symbolInfo, resolution);
           const lastBarTime = lastBars.get(fetchID)?.time;
-          const url = getFetchURL(tokenIdA, tokenIdB, resolution, {
+          // sebscribe in seconds because API does not support other resolutions
+          const url = getFetchURL(tokenIdA, tokenIdB, supportedResolutions[0], {
             // set start limit in Unix seconds
             from_block_tmstmp: Math.floor(
               (lastBarTime || Date.now()) / 1000
