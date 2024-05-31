@@ -263,6 +263,11 @@ export class IndexerStream<RestPageResponse, DataRow extends BaseDataRow> {
 
         // add event source connected to theinstance abortController
         fetchEventSource(sseURL.toString(), {
+          // ensure events aren't missed if the page is inactive
+          // todo: create update method when a page is re-activated after sleep
+          //       this would require a complete refetch for liquidity data
+          keepalive: true,
+          openWhenHidden: true,
           headers: defaultHeaders,
           signal: this.abortController.signal,
           async onopen(response) {
