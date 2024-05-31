@@ -12,7 +12,7 @@ import {
   AccumulatorOptions,
   BaseTimeSeriesSSERow,
   TimeSeriesPage,
-  useIndexerStreamOfSingleDataSet,
+  useFetchSingleDataSetFromIndexer,
 } from '../../lib/web3/hooks/useIndexer';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
@@ -139,11 +139,16 @@ function useTimeSeriesData<TimeSeriesDataRow extends BaseTimeSeriesSSERow>(
       `from_block_tmstmp=${from}`,
     ].join('&')}`;
   }, [pathPart, tokenA, tokenB, timePeriodKey]);
-  const stream = useIndexerStreamOfSingleDataSet<
+  const stream = useFetchSingleDataSetFromIndexer<
     TimeSeriesPage<TimeSeriesDataRow>,
     TimeSeriesDataRow,
     Map<number, number[]>
-  >(urlPath, opts);
+  >(urlPath, {
+    // note: disabling SSE for now because API does not support subscriptions
+    //       at a resolution higher than seconds, which all of these charts are
+    disableSSE: true,
+    ...opts,
+  });
 
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
     const data = stream.data;
