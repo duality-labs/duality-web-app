@@ -47,7 +47,9 @@ export default function PoolChart({
   tokenB: Token;
 }) {
   const [chartIndex, setChartIndex] = useState<number>(0);
-  const [timePeriodIndex, setTimePeriodIndex] = useState<number>(0);
+  // start with weekly chart by default: 24H can have excessive detail
+  // and we would like the initial chart to load quickly
+  const [timePeriodIndex, setTimePeriodIndex] = useState<number>(1);
   const chartKey = chartKeys[chartIndex];
   const timePeriodKey = timePeriodKeys[timePeriodIndex];
   const ChartComponent = chartComponents[chartKey];
