@@ -187,10 +187,15 @@ export default function OrderBookList({
         sections.spacer.offsetHeight -
         sections.header.offsetHeight -
         sections.center.offsetHeight;
-      const tableRowHeight =
-        (sections.top.offsetHeight + sections.bottom.offsetHeight) /
-        (sections.top.childElementCount + sections.bottom.childElementCount);
       // determine how many rows we could add to the table
+      const bucketRows = [
+        ...sections.top.children,
+        ...sections.bottom.children,
+      ];
+      const tableRowHeight = bucketRows.length
+        ? bucketRows.reduce((acc, v) => acc + v.clientHeight, 0) /
+          bucketRows.length
+        : 20;
       const maxRowCount = tableRowHeight
         ? Math.floor(tableHeightForRows / tableRowHeight / 2)
         : 1;
