@@ -60,7 +60,11 @@ function Orderbook() {
 
   const priceIndication = depthPriceIndication ?? formPriceIndication;
   const activeBucketOffsets = useMemo(() => {
-    if (currentPrice && priceIndication && currentPrice !== priceIndication) {
+    if (
+      currentPrice &&
+      priceIndication !== undefined &&
+      currentPrice !== priceIndication
+    ) {
       const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
       return priceIndication > currentPrice
         ? bucketOffsetsB?.filter(
@@ -75,7 +79,7 @@ function Orderbook() {
   const priceConnectionLines = useMemo<ConnectionLine[]>(() => {
     if (
       chartPriceAxis &&
-      priceIndication &&
+      priceIndication !== undefined &&
       depthBucketOffsets &&
       currentPrice
     ) {
@@ -266,7 +270,7 @@ function Orderbook() {
     ConnectionArea | undefined
   >(() => {
     const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
-    if (chartPriceAxis && currentPrice && priceIndication) {
+    if (chartPriceAxis && currentPrice && priceIndication !== undefined) {
       const price = priceIndication;
       const [innerBucket, outerBucket] =
         price <= currentPrice

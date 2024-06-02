@@ -65,7 +65,7 @@ export default function useBucketsByPriceResolution(
         // does value belong in the last bucket?
         if (
           lastValue &&
-          outerBound &&
+          outerBound !== undefined &&
           (inverseDirection
             ? displayPrice.isLessThanOrEqualTo(outerBound)
             : displayPrice.isGreaterThanOrEqualTo(outerBound))
@@ -93,7 +93,7 @@ export default function useBucketsByPriceResolution(
                 : Number(
                     displayPrice.toPrecision(precision, BigNumber.ROUND_DOWN)
                   )
-              : bucketResolution;
+              : 0;
           // get inner bound based on outer bound, but limit to current price
           const innerBound = inverseDirection
             ? Math.max(

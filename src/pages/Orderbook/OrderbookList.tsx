@@ -362,12 +362,13 @@ export default function OrderBookList({
                 }
                 onHighlight={onHighlightPrice}
                 onClick={(bucketPrice) => {
-                  setLimitPrice?.(
-                    formatAmount(bucketPrice, {
-                      minimumFractionDigits: priceDecimalPlaces,
-                      maximumFractionDigits: priceDecimalPlaces,
-                    })
-                  );
+                  bucketPrice &&
+                    setLimitPrice?.(
+                      formatAmount(bucketPrice, {
+                        minimumFractionDigits: priceDecimalPlaces,
+                        maximumFractionDigits: priceDecimalPlaces,
+                      })
+                    );
                 }}
               />
             ) : (
@@ -428,7 +429,7 @@ export default function OrderBookList({
             })?.[2];
             const reservesDiff =
               previousReserves && reserves ? reserves - previousReserves : 0;
-            return maxPrice && price && reserves && lastBucket ? (
+            return maxPrice && price !== undefined && reserves && lastBucket ? (
               <OrderbookListRow
                 key={price}
                 className={
@@ -454,12 +455,13 @@ export default function OrderBookList({
                 }
                 onHighlight={onHighlightPrice}
                 onClick={(bucketPrice) => {
-                  setLimitPrice?.(
-                    formatAmount(bucketPrice, {
-                      minimumFractionDigits: priceDecimalPlaces,
-                      maximumFractionDigits: priceDecimalPlaces,
-                    })
-                  );
+                  bucketPrice &&
+                    setLimitPrice?.(
+                      formatAmount(bucketPrice, {
+                        minimumFractionDigits: priceDecimalPlaces,
+                        maximumFractionDigits: priceDecimalPlaces,
+                      })
+                    );
                 }}
               />
             ) : (
