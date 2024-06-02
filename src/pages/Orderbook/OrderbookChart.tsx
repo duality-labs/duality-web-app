@@ -475,6 +475,7 @@ export default function OrderBookChart({
       const line = chart
         // this function will throw an exception if chart is not ready yet
         .createOrderLine()
+        .setLineColor('white')
         .setPrice(priceIndication)
         .setText('')
         .setQuantity('');
