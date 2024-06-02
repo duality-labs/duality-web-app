@@ -282,7 +282,8 @@ function Orderbook() {
             getChartPricePointOffset(chartPriceAxis, priceIndication),
             outerBucket[1][1] || 0,
           ],
-          0.035,
+          // this opacity will be offset by the "minimum" connection opacity
+          -0.025,
         ];
       }
     }

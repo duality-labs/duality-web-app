@@ -16,8 +16,8 @@ export type ChartArea = [
   weight: number,
   fillColor?: string | CanvasGradient | CanvasPattern
 ];
-const connectionMinOpacity = 0.1;
-const connectionMaxOpacity = 0.3;
+const connectionMinOpacity = 0.05;
+const connectionMaxOpacity = 0.4;
 
 export default function OrderbookChartConnector({
   connectionLines,
