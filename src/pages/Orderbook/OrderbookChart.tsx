@@ -139,6 +139,8 @@ export default function OrderBookChart({
     useMemo<Array<[Token, Token]>>(() => {
       return tokenPairReserves && tokenByDenom
         ? tokenPairReserves
+            // sort consistently to avoid re-rendering
+            .sort(([a], [b]) => a.localeCompare(b))
             // find the tokens that match our known pair token IDs
             .map(([denom0, denom1]) => {
               return [tokenByDenom.get(denom0), tokenByDenom.get(denom1)];
