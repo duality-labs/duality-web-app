@@ -43,7 +43,7 @@ import {
 } from '../../lib/web3/hooks/useTranches';
 import { useWithdrawFilledLimitOrder } from './useWithdrawFilledLimitOrder';
 import { useCancelLimitOrder } from './useCancelLimitOrder';
-import useOnUserDexMsg from '../../lib/web3/hooks/useOnUserDexMsg';
+import { useOnUserDexMsg } from '../../lib/web3/hooks/useOnDexMsg';
 
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';

@@ -5,12 +5,11 @@ import { MessageActionEvent, TendermintTxData } from '../events';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import subscriber from '../subscriptionManager';
 
-export default function useOnUserDexMsg<T extends DexEvent>(
+export default function useOnDexMsg<T extends DexEvent>(
   actionOrActions: T['attributes']['action'] | Array<T['attributes']['action']>,
-  callback: (tx: TendermintTxData, dexEvent: T) => void
+  callback: (tx: TendermintTxData, dexEvent: T) => void,
+  filterMessages?: Partial<T['attributes']> | null | undefined
 ) {
-  const { address } = useWeb3();
-
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 
@@ -18,13 +17,13 @@ export default function useOnUserDexMsg<T extends DexEvent>(
     Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
   );
 
+  const memoizedfilterMessages = useDeepCompareMemoize(filterMessages);
+
   // subscribe to updates to the user's limit orders
   useEffect(() => {
-    if (address) {
-      const onUserDexMsg = (
-        _event: MessageActionEvent,
-        tx: TendermintTxData
-      ) => {
+    // allow memoizedfilterMessages === null to cancel effect
+    if (memoizedfilterMessages !== null) {
+      const onDexMsg = (_event: MessageActionEvent, tx: TendermintTxData) => {
         const events = tx.value.TxResult.result.events.map(mapEventAttributes);
         const dexEvent = events.find(
           (event): event is T =>
@@ -38,12 +37,23 @@ export default function useOnUserDexMsg<T extends DexEvent>(
         }
       };
       // subscribe to all the user's dex messages
-      subscriber.subscribeMessage(onUserDexMsg, {
-        message: { module: 'dex', Creator: address },
+      subscriber.subscribeMessage(onDexMsg, {
+        message: { module: 'dex', ...memoizedfilterMessages },
       });
       return () => {
-        subscriber.unsubscribeMessage(onUserDexMsg);
+        subscriber.unsubscribeMessage(onDexMsg);
       };
     }
-  }, [callback, address, actions]);
+  }, [callback, memoizedfilterMessages, actions]);
+}
+
+export function useOnUserDexMsg<T extends DexEvent>(
+  actionOrActions: T['attributes']['action'] | Array<T['attributes']['action']>,
+  callback: (tx: TendermintTxData, dexEvent: T) => void
+) {
+  const { address } = useWeb3();
+  const filterToUserMsgs: Partial<DexEvent['attributes']> | null = address
+    ? { Creator: address }
+    : null;
+  return useOnDexMsg<T>(actionOrActions, callback, filterToUserMsgs);
 }

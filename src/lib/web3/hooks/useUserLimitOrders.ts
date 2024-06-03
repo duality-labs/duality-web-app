@@ -10,7 +10,7 @@ import { useDexRestClientPromise } from '../clients/restClients';
 import { useWeb3 } from '../useWeb3';
 import { useFetchAllPaginatedPages } from './useQueries';
 import { useSwrResponseFromReactQuery } from './useSWR';
-import useOnUserDexMsg from './useOnUserDexMsg';
+import { useOnUserDexMsg } from './useOnDexMsg';
 
 const LimitOrderActions: Array<DexLimitOrderEvent['attributes']['action']> = [
   'PlaceLimitOrder',

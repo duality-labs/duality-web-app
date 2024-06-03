@@ -76,7 +76,6 @@ export default function useTransactionTableData({
       pageOffset,
     ],
     enabled: !!(tokenIdA && tokenIdB),
-    refetchInterval: 10000,
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 

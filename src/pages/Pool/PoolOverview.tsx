@@ -36,6 +36,9 @@ import {
 import useTransactionTableData, { Tx } from './hooks/useTransactionTableData';
 import { useUserHasDeposits } from '../../lib/web3/hooks/useUserDeposits';
 import { useSimplePrice } from '../../lib/tokenPrices';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import useOnDexMsg from '../../lib/web3/hooks/useOnDexMsg';
+
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
 
@@ -280,6 +283,16 @@ function TransactionsTable({
   action?: DexMessageAction;
 }) {
   const query = useTransactionTableData({ tokenA, tokenB, action });
+
+  // subscribe to updates of the pair's limit orders
+  const denoms = useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]);
+  useOnDexMsg<DexPlaceLimitOrderEvent>(
+    'PlaceLimitOrder',
+    () => {
+      query.refetch({ cancelRefetch: false });
+    },
+    denoms ? { TokenZero: denoms[0], TokenOne: denoms[1] } : null
+  );
 
   const columns = useMemo(() => {
     return transactionTableHeadings.map(

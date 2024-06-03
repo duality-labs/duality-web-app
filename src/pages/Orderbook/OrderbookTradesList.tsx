@@ -10,10 +10,13 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
 
 import {
+  DexPlaceLimitOrderEvent,
   getLastPrice,
   getSpentTokenAmount,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
+import useOnDexMsg from '../../lib/web3/hooks/useOnDexMsg';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 
 import './OrderbookTradesList.scss';
 
@@ -28,12 +31,22 @@ export default function OrderBookTradesList({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const { data, isLoading } = useTransactionTableData({
+  const { data, isLoading, refetch } = useTransactionTableData({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
     pageSize,
   });
+
+  // subscribe to updates of the pair's limit orders
+  const denoms = useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]);
+  useOnDexMsg<DexPlaceLimitOrderEvent>(
+    'PlaceLimitOrder',
+    () => {
+      refetch({ cancelRefetch: false });
+    },
+    denoms ? { TokenZero: denoms[0], TokenOne: denoms[1] } : null
+  );
 
   const [tradeList, setTradeList] = useState<Array<Tx>>([]);
   useEffect(() => {
