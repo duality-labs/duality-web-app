@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
   widget,
   IBasicDataFeed,
@@ -9,7 +8,6 @@ import {
   DatafeedConfiguration,
   ResolutionString,
   LibrarySymbolInfo,
-  SearchSymbolResultItem,
   Bar,
   Timezone,
   VisiblePriceRange,
@@ -20,8 +18,6 @@ import {
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
-import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
-import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import {
@@ -129,30 +125,6 @@ export default function OrderBookChart({
   // store chart widget when ready
   const [chart, setChart] = useState<IChartWidgetApi>();
 
-  const { data: tokenPairReserves } = useTokenPairs();
-  const { data: tokenByDenom } = useTokenByDenom(
-    tokenPairReserves?.flatMap(([denom0, denom1]) => [denom0, denom1])
-  );
-
-  // memoize tokenPairs so we don't trigger the graph re-rendering too often
-  const tokenPairs = useDeepCompareMemoize(
-    useMemo<Array<[Token, Token]>>(() => {
-      return tokenPairReserves && tokenByDenom
-        ? tokenPairReserves
-            // sort consistently to avoid re-rendering
-            .sort(([a], [b]) => a.localeCompare(b))
-            // find the tokens that match our known pair token IDs
-            .map(([denom0, denom1]) => {
-              return [tokenByDenom.get(denom0), tokenByDenom.get(denom1)];
-            })
-            // remove pairs with unfound tokens
-            .filter<[Token, Token]>((tokenPair): tokenPair is [Token, Token] =>
-              tokenPair.every(Boolean)
-            )
-        : [];
-    }, [tokenByDenom, tokenPairReserves])
-  );
-
   // tokenPairID is made of symbols, which is different to token paths
   const tokenPairID = useMemo(() => {
     if (tokenA && tokenB) {
@@ -222,12 +194,6 @@ export default function OrderBookChart({
       return url;
     };
 
-    // skip if token pairs list is not yet ready
-    // this can cause multiple restarts of the charts until it is ready
-    if (!tokenPairs.length) {
-      return;
-    }
-
     // don't create options unless ID requirements are satisfied
     if (chartRef.current && tokenPairID && tokenIdA && tokenIdB) {
       const datafeed: IBasicDataFeed = {
@@ -275,44 +241,12 @@ export default function OrderBookChart({
           }, 0);
         },
         searchSymbols: (
-          userInput = '',
+          _userInput,
           _exchange, // will always be "Neutron"
           _symbolType, // will always be "crypto"
           onResultReadyCallback
         ) => {
-          const tokens = Array.from(new Set(tokenPairs.flatMap((v) => v)));
-          const inputs = userInput.toLowerCase().split('/');
-          const filteredTokens = tokens.filter((token) => {
-            // return a match if any of the inputs given match a token
-            return inputs.some((input) => {
-              return (
-                token.chain.chain_name.toLowerCase().includes(input) ||
-                token.name.toLowerCase().includes(input) ||
-                token.base.toLowerCase().includes(input) ||
-                token.display.toLowerCase().includes(input) ||
-                token.symbol.toLowerCase().includes(input) ||
-                token.keywords?.map((v) => v.toLowerCase()).includes(input)
-              );
-            });
-          });
-
-          const items: SearchSymbolResultItem[] = tokenPairs
-            .filter(([tokenA, tokenB]) => {
-              return (
-                filteredTokens.includes(tokenA) ||
-                filteredTokens.includes(tokenB)
-              );
-            })
-            .map(([tokenA, tokenB]) => {
-              return {
-                exchange: 'Neutron Dex',
-                symbol: `${tokenA.symbol}/${tokenB.symbol}`,
-                full_name: `${tokenA.symbol}/${tokenB.symbol}`,
-                description: `Neutron Dex pair of ${tokenA.name} and ${tokenB.name}`,
-                type: 'crypto',
-              };
-            });
-          onResultReadyCallback(items);
+          onResultReadyCallback([]);
         },
         getBars: async (
           symbolInfo,
@@ -494,7 +428,7 @@ export default function OrderBookChart({
         });
       };
     }
-  }, [navigate, setLimitPrice, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
+  }, [navigate, setLimitPrice, tokenIdA, tokenIdB, tokenPairID]);
 
   useEffect(() => {
     if (priceIndication && chart && isChartReady(chart)) {
