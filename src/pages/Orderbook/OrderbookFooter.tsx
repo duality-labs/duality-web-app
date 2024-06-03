@@ -180,6 +180,7 @@ function OrderbookFooterTable({
         userLimitOrderMap: userLimitOrderMapOfPair,
         filterToStatus,
       }}
+      rowDescription="Orders"
     />
   );
 }
