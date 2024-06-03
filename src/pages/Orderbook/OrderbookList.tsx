@@ -510,12 +510,17 @@ export default function OrderBookList({
   // add all bucket "display reserves" values together for summary bar
   const bucketBuyPercent = useMemo<number | undefined>(() => {
     const [bucketsA, bucketsB] = buckets || [];
-    const reservesA = bucketsA?.reduce((acc, [, , v]) => acc + v, 0);
-    const reservesB = bucketsB?.reduce((acc, [, , v]) => acc + v, 0);
-    return reservesA && reservesB
-      ? reservesA / (reservesA + reservesB)
-      : undefined;
-  }, [buckets]);
+    if (bucketsA && bucketsB && currentPrice) {
+      const reservesA = bucketsA.reduce((acc, [, , v]) => acc + v, 0);
+      const reservesB = bucketsB.reduce((acc, [, , v]) => acc + v, 0);
+      // calculate value in equivalent tokenA (to avoid USD lookups)
+      const reservesValueA = reservesA;
+      const reservesValueB = reservesB * currentPrice;
+      return reservesValueA + reservesValueB
+        ? reservesValueA / (reservesValueA + reservesValueB)
+        : undefined;
+    }
+  }, [buckets, currentPrice]);
 
   return (
     <>
