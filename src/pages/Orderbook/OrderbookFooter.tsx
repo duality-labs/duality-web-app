@@ -181,6 +181,7 @@ function OrderbookFooterTable({
         filterToStatus,
       }}
       rowDescription="Orders"
+      messageOnEmptyData={!address && 'Connect wallet to see your orders'}
     />
   );
 }
