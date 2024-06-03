@@ -519,7 +519,13 @@ export default function OrderBookChart({
         timeout = setTimeout(checkChartAxis, isFocused ? 30 : 100);
       };
       let timeout = setTimeout(checkChartAxis, 0);
-      return () => clearTimeout(timeout);
+      return () => {
+        clearTimeout(timeout);
+        // remove chart axis when chart is removed
+        if (!isChartReady(chart)) {
+          setPriceAxis?.(undefined);
+        }
+      };
     }
   }, [chart, isFocused, setPriceAxis]);
 
