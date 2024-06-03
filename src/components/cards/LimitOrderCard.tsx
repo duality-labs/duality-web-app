@@ -62,8 +62,10 @@ import {
   immediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
 import {
+  DexPlaceLimitOrderEvent,
   DexTickUpdateEvent,
   DexTickUpdateReservesEvent,
+  DexTickUpdateTrancheEvent,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import {
@@ -755,24 +757,44 @@ function LimitOrder({
     if (simulationResult?.result) {
       // send slippage indication to rest of Orderbook
       if (priceTab === 'Swap' && currentPriceAtoB) {
-        const events = simulationResult.result?.events
-          .map<DexTickUpdateReservesEvent>(mapEventAttributes)
-          .filter((event) => event.attributes.TickIndex);
-        const endTickIndex = events?.at(-1)?.attributes.TickIndex;
-        const endPrice =
-          endTickIndex &&
+        const events = simulationResult.result?.events.map(mapEventAttributes);
+        // determine is this swap produced a tranche key (it should not)
+        const resultTrancheKey = events.find(
+          (event): event is DexPlaceLimitOrderEvent =>
+            (event as DexPlaceLimitOrderEvent).attributes.action ===
+            'PlaceLimitOrder'
+        )?.attributes.TrancheKey;
+        // get price events
+        const orderPriceEvents = events
+          // match reserve updates
+          .filter<DexTickUpdateReservesEvent | DexTickUpdateTrancheEvent>(
+            (event): event is DexTickUpdateReservesEvent =>
+              // match reserves event
+              !!(event as DexTickUpdateReservesEvent).attributes.TickIndex &&
+              // unmatch result tranch event
+              // note: this should be removable after the chain update to sdk-50
+              (!resultTrancheKey ||
+                (event as DexTickUpdateTrancheEvent).attributes.TrancheKey !==
+                  resultTrancheKey)
+          );
+        // determine the resulting price
+        const orderPriceEventIndexes = orderPriceEvents?.map(
+          (event) =>
+            Number(event.attributes.TickIndex) *
+            (event.attributes.TokenIn === tokenA.base ? -1 : 1)
+        );
+        const endPriceTickIndex = buyMode
+          ? Math.max(...orderPriceEventIndexes)
+          : Math.min(...orderPriceEventIndexes);
+        const endDisplayPrice =
+          Number.isFinite(endPriceTickIndex) &&
           tickIndexToDisplayPrice(
-            new BigNumber(endTickIndex),
+            new BigNumber(endPriceTickIndex),
             tokenA,
             tokenB
           )?.toNumber();
-        setPriceIndication?.(
-          endPrice
-            ? buyMode
-              ? Math.max(currentPriceAtoB, endPrice)
-              : Math.min(currentPriceAtoB, endPrice)
-            : undefined
-        );
+        // set price if available
+        setPriceIndication?.(endDisplayPrice || undefined);
       }
     }
   }, [
