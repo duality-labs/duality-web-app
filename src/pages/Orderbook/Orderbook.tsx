@@ -54,7 +54,7 @@ function Orderbook() {
 
   const [depthBucketOffsets, setDepthBucketOffsets] = useState<
     BucketOffset[][]
-  >([]);
+  >([[], []]);
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
@@ -115,7 +115,7 @@ function Orderbook() {
   const depthBucketConnections = useMemo<ConnectionArea[][] | undefined>(() => {
     if (currentPrice && chartPriceAxis && buckets && depthBucketOffsets) {
       const [bucketsA = [], bucketsB = []] = buckets;
-      const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
+      const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
       // find the maximum reserve equivalent value for connection opacity
       const reservesA = bucketsA.map((bucket) => bucket[2]);
       const reservesB = bucketsB.map((bucket) => bucket[2]);
@@ -125,7 +125,7 @@ function Orderbook() {
       );
       // draw connections of chart offsets to depth offsets for each bucket
       return [
-        bucketOffsetsA
+        bucketOffsetsA.length > 0
           ? bucketsA.map<ConnectionArea>(
               ([innerBound, outerBound, reserves]) => {
                 const bucketOffset = bucketOffsetsA.find(
@@ -154,7 +154,7 @@ function Orderbook() {
               }
             )
           : [],
-        bucketOffsetsB
+        bucketOffsetsB.length > 0
           ? bucketsB.map<ConnectionArea>(
               ([innerBound, outerBound, reserves]) => {
                 const bucketOffset = bucketOffsetsB.find(
