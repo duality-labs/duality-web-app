@@ -18,11 +18,12 @@ import {
   useEstimatedUserReserves,
   useValuedUserReserves,
 } from '../../lib/web3/hooks/useUserReserves';
+import { filterToTokenPairsWhitelist } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import './TokenPairPicker.scss';
 
 type TokenPair = [tokenA: Token | undefined, tokenB: Token | undefined];
-type AssetMode = 'Your Pools' | 'Dex Pools';
+type AssetMode = 'Your Pools' | 'Dex Pools' | 'Recommended Dex Pools';
 export type { AssetMode as TokenPairPickerAssetMode };
 
 interface TokenPickerProps {
@@ -64,12 +65,17 @@ interface CommonTokenPair {
   value: number;
 }
 
+const tabYourPools = 'Your Pools';
+const tabDexPools = filterToTokenPairsWhitelist
+  ? 'Recommended Dex Pools'
+  : 'Dex Pools';
+
 export default function TokenPairPicker({
   className,
   value,
   onChange,
   disabled = false,
-  defaultAssetMode: givenDefaultAssetMode = 'Dex Pools',
+  defaultAssetMode: givenDefaultAssetMode = tabDexPools,
   ChildComponent = OpenTokenPairPickerButton,
 }: TokenPickerProps) {
   // source user pairs
@@ -83,9 +89,9 @@ export default function TokenPairPicker({
   // make an exception to the default asset mode:
   // show the user the Dex assets if they have no assets themselves
   const defaultAssetMode: AssetMode =
-    givenDefaultAssetMode === 'Your Pools' && (userReserves || []).length > 0
-      ? 'Your Pools'
-      : 'Dex Pools';
+    givenDefaultAssetMode === tabYourPools && (userReserves || []).length > 0
+      ? tabYourPools
+      : tabDexPools;
   const [assetMode = defaultAssetMode, setAssetMode] = useState<AssetMode>();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,10 +99,12 @@ export default function TokenPairPicker({
   // update the filtered list whenever the query or the list changes
   const tokenPairList = useMemo(() => {
     switch (assetMode) {
-      case 'Your Pools':
+      case tabYourPools:
         return userValuedPairs?.filter(filterToKnownTokens);
-      case 'Dex Pools':
-        return dexValuedPairs?.filter(filterToKnownTokens);
+      case tabDexPools:
+        return dexValuedPairs?.filter(
+          filterToTokenPairsWhitelist || ((v) => v)
+        );
     }
     // hide unrecommended not found (generated from denom) assets
     function filterToKnownTokens(pair: { token0: Token; token1: Token }) {
@@ -160,13 +168,13 @@ export default function TokenPairPicker({
       excludedValues={excludedValues}
       searchQuery={searchQuery}
       setSearchQuery={setSearchQuery}
-      tabs={useMemo(() => ['Your Pools', 'Dex Pools'], [])}
-      tabsNote={assetMode === 'Your Pools' ? 'Your value' : 'TVL'}
+      tabs={useMemo(() => [tabYourPools, tabDexPools], [])}
+      tabsNote={assetMode === tabYourPools ? 'Your value' : 'TVL'}
       tab={assetMode}
       onTabChange={setAssetMode}
       header="Select a Pool"
       placholder={
-        assetMode === 'Your Pools' ? (
+        assetMode === tabYourPools ? (
           <div>
             <p>Your wallet contains no tradable tokens</p>
             <p>Add tokens to your wallet to see them here</p>

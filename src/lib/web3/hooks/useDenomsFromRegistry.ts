@@ -9,6 +9,7 @@ import { ibcDenom, getIbcAssetPath } from '@chain-registry/utils';
 import { Asset, AssetList, Chain, IBCInfo } from '@chain-registry/types';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 import { SWRCommon, useSwrResponse } from './useSWR';
+import { Token } from '../utils/tokens';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -16,6 +17,7 @@ const {
   REACT_APP__CHAIN_REGISTRY_FILE_ENDPOINTS = '["https://registry.ping.pub"]',
   REACT_APP__CHAIN_REGISTRY_PATH_ENDPOINTS = '["https://registry.ping.pub"]',
   REACT_APP__CHAIN_REGISTRY_ASSET_LISTS = '',
+  REACT_APP__CHAIN_REGISTRY_ASSET_PAIR_LIST = '',
   REACT_APP__CHAIN_REGISTRY_CHAINS = '',
   REACT_APP__CHAIN_REGISTRY_IBC_DATA = '',
 } = import.meta.env;
@@ -49,6 +51,41 @@ const defaultClientOptions: ChainRegistryClientOptions = {
   ibcData: defaultIbcData,
   chainNames: [REACT_APP__CHAIN_NAME],
 };
+
+interface WhitelistedTokenPairMatch {
+  asset_1: {
+    chain_name: string;
+    asset_base: string;
+  };
+  asset_2: {
+    chain_name: string;
+    asset_base: string;
+  };
+}
+
+const tokenPairsWhitelist: WhitelistedTokenPairMatch[] | undefined =
+  REACT_APP__CHAIN_REGISTRY_ASSET_PAIR_LIST
+    ? JSON.parse(REACT_APP__CHAIN_REGISTRY_ASSET_PAIR_LIST)
+    : undefined;
+
+export const filterToTokenPairsWhitelist = tokenPairsWhitelist
+  ? (pair: { token0: Token; token1: Token }): boolean => {
+      return !!tokenPairsWhitelist.find((allowed) => {
+        return (
+          // match in aligned direction
+          (pair.token0.base === allowed.asset_1.asset_base &&
+            pair.token0.chain.chain_name === allowed.asset_1.chain_name &&
+            pair.token1.base === allowed.asset_2.asset_base &&
+            pair.token1.chain.chain_name === allowed.asset_2.chain_name) ||
+          // or match in inverted direction
+          (pair.token0.base === allowed.asset_2.asset_base &&
+            pair.token0.chain.chain_name === allowed.asset_2.chain_name &&
+            pair.token1.base === allowed.asset_1.asset_base &&
+            pair.token1.chain.chain_name === allowed.asset_1.chain_name)
+        );
+      });
+    }
+  : undefined;
 
 type ChainNamePair = [chainName1: string, chainName2: string];
 
