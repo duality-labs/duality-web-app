@@ -774,7 +774,19 @@ function LimitOrder({
             tokenA,
             tokenB
           )?.toNumber();
-        setPriceIndication(endDisplayPrice || currentPriceAtoB || undefined);
+        // prevent showing "incorrect side" price by limiting to current price
+        // note: this isn't strictly correct but looks better: a race condition
+        //       can form because endDisplayPrice is a chain response result and
+        //       currentPriceAtoB is an indexer response result.
+        const possibleDisplayPrices: number[] = [
+          endDisplayPrice,
+          currentPriceAtoB,
+        ].filter((price): price is number => typeof price === 'number');
+        setPriceIndication(
+          (buyMode
+            ? Math.max(...possibleDisplayPrices)
+            : Math.min(...possibleDisplayPrices)) || undefined
+        );
       }
       // set market price if available: no simulation result
       else {
