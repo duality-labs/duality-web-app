@@ -269,7 +269,7 @@ function Orderbook() {
   const priceIndicationBucketConnection = useMemo<
     ConnectionArea | undefined
   >(() => {
-    const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
+    const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
     if (chartPriceAxis && currentPrice && priceIndication !== undefined) {
       const price = priceIndication;
       const [innerBucket, outerBucket] =
