@@ -400,9 +400,9 @@ function LimitOrder({
 
       const execution = formState.execution;
       // find limit price from custom limit price or limit price offset
-      // calculation, and do not pass 0: allow NaN to raise errors
+      // calculation, and do not pass 0: allow NaN to act as market price
       const limitPrice = Number(
-        formState.limitPrice || (limitOption > 0 ? offsetLimitPrice : NaN)
+        formState.limitPrice || (priceTab === 'Limit' ? offsetLimitPrice : NaN)
       );
 
       // find amounts in/out for the order
@@ -509,7 +509,6 @@ function LimitOrder({
       formState.execution,
       formState.limitPrice,
       hasExpiry,
-      limitOption,
       offsetLimitPrice,
       priceTab,
       tokenIn,
@@ -738,7 +737,7 @@ function LimitOrder({
         setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
       }
       // set market price slippage result: based on trade simulation end price
-      else if (simulationResult?.result) {
+      else if (priceTab === 'Swap' && simulationResult?.result) {
         const events = simulationResult.result?.events.map(mapEventAttributes);
         // determine is this swap produced a tranche key (it should not)
         const resultTrancheKey = events.find(
