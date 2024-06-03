@@ -28,7 +28,7 @@ export default function OrderBookTradesList({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const { data } = useTransactionTableData({
+  const { data, isLoading } = useTransactionTableData({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
@@ -109,6 +109,11 @@ export default function OrderBookTradesList({
               return null;
             }
           })}
+          {(!tradeList || !tradeList.length) && (
+            <tr>
+              <td colSpan={3}>{isLoading ? 'Loading...' : 'No Data'}</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
