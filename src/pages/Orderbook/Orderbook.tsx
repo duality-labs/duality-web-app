@@ -340,6 +340,7 @@ function Orderbook() {
                       ? priceIndication
                       : undefined
                   }
+                  setLimitPrice={setLimitPrice}
                   setPriceAxis={setChartPriceAxis}
                 />
               )}

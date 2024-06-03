@@ -15,6 +15,7 @@ import {
   VisiblePriceRange,
   PriceScaleMode,
   IChartWidgetApi,
+  CrossHairMovedEventParams,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
@@ -105,12 +106,14 @@ export default function OrderBookChart({
   tokenA,
   tokenB,
   priceIndication,
+  setLimitPrice,
   setPriceAxis,
 }: {
   tokenA: Token;
   tokenB: Token;
   priceIndication?: number | undefined;
   setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setLimitPrice?: (limitPrice: string) => void;
   setPriceAxis?: React.Dispatch<
     React.SetStateAction<ChartPriceAxisInfo | undefined>
   >;
@@ -453,8 +456,29 @@ export default function OrderBookChart({
         if (defaultWidgetOptions.settings_overrides) {
           tvWidget.applyOverrides(defaultWidgetOptions.settings_overrides);
         }
+
+        const chart = tvWidget.activeChart();
+
+        // track chart onClick price
+        if (setLimitPrice) {
+          let crosshair: CrossHairMovedEventParams | undefined;
+          let lastMouseDownAt: number = 0;
+          chart.crossHairMoved().subscribe(null, (e) => (crosshair = e));
+          tvWidget.subscribe(
+            'mouse_down',
+            () => (lastMouseDownAt = Date.now())
+          );
+          tvWidget.subscribe('mouse_up', () => {
+            if (Date.now() - lastMouseDownAt < 100) {
+              if (crosshair?.price) {
+                setLimitPrice?.(new BigNumber(crosshair.price).toPrecision(6));
+              }
+            }
+          });
+        }
+
         // store current widget
-        setChart(tvWidget.activeChart());
+        setChart(chart);
       });
 
       // return method to cleanup widget and data subscribers
@@ -468,7 +492,7 @@ export default function OrderBookChart({
         });
       };
     }
-  }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
+  }, [navigate, setLimitPrice, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
 
   useEffect(() => {
     if (priceIndication && chart && isChartReady(chart)) {
