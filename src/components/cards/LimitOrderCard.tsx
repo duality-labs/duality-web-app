@@ -329,28 +329,6 @@ function LimitOrder({
     }
   }, [buyMode, currentPriceAtoB, limitOption]);
 
-  // update the price indication from the form
-  useEffect(() => {
-    if (setPriceIndication) {
-      if (priceTab === 'Limit') {
-        if (currentPriceAtoB && limitOption === 0) {
-          setPriceIndication(currentPriceAtoB);
-        } else {
-          setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
-        }
-      } else {
-        setPriceIndication(undefined);
-      }
-    }
-  }, [
-    currentPriceAtoB,
-    formState.limitPrice,
-    limitOption,
-    offsetLimitPrice,
-    priceTab,
-    setPriceIndication,
-  ]);
-
   const switchLimitOption = useCallback(
     (limitOption: LimitPriceOptions) => {
       // set value
@@ -752,11 +730,15 @@ function LimitOrder({
     }
   }, [simulationResult?.response]);
 
-  // update slippage indication on chart
+  // update the price indication from the form
   useEffect(() => {
-    if (simulationResult?.result) {
-      // send slippage indication to rest of Orderbook
-      if (priceTab === 'Swap' && currentPriceAtoB) {
+    if (setPriceIndication) {
+      // set limit price
+      if (priceTab === 'Limit' && limitOption !== 0) {
+        setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
+      }
+      // set market price slippage result: based on trade simulation end price
+      else if (simulationResult?.result) {
         const events = simulationResult.result?.events.map(mapEventAttributes);
         // determine is this swap produced a tranche key (it should not)
         const resultTrancheKey = events.find(
@@ -793,13 +775,19 @@ function LimitOrder({
             tokenA,
             tokenB
           )?.toNumber();
-        // set price if available
-        setPriceIndication?.(endDisplayPrice || undefined);
+        setPriceIndication(endDisplayPrice || currentPriceAtoB || undefined);
+      }
+      // set market price if available: no simulation result
+      else {
+        setPriceIndication(currentPriceAtoB || undefined);
       }
     }
   }, [
     buyMode,
     currentPriceAtoB,
+    formState.limitPrice,
+    limitOption,
+    offsetLimitPrice,
     priceTab,
     setPriceIndication,
     simulationResult?.result,
