@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
 
 import useTransactionTableData, {
@@ -11,8 +12,8 @@ import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
 
 import {
   DexPlaceLimitOrderEvent,
-  getLastPrice,
   getSpentTokenAmount,
+  getTxEventsEndDisplayPrice,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import useOnDexMsg from '../../lib/web3/hooks/useOnDexMsg';
@@ -160,18 +161,18 @@ function OrderbookTradeListRow({
     return previousTx?.tx_result.events.map(mapEventAttributes) || [];
   }, [previousTx]);
 
-  const lastPrice = useMemo(() => {
-    return getLastPrice(events, { tokenA, tokenB });
+  const lastDisplayPrice = useMemo((): BigNumber | undefined => {
+    return getTxEventsEndDisplayPrice(events, tokenA, tokenB);
   }, [events, tokenA, tokenB]);
   const prevPrice = useMemo(() => {
-    return getLastPrice(previousEvents, { tokenA, tokenB });
+    return getTxEventsEndDisplayPrice(previousEvents, tokenA, tokenB);
   }, [previousEvents, tokenA, tokenB]);
 
   const diff = useMemo(() => {
-    return lastPrice !== undefined && prevPrice !== undefined
-      ? lastPrice.minus(prevPrice).toNumber()
+    return lastDisplayPrice !== undefined && prevPrice !== undefined
+      ? lastDisplayPrice.minus(prevPrice).toNumber()
       : 0;
-  }, [lastPrice, prevPrice]);
+  }, [lastDisplayPrice, prevPrice]);
 
   const value = useMemo(() => {
     const amountSpentA = getSpentTokenAmount(events, { matchToken: tokenA });
@@ -199,8 +200,8 @@ function OrderbookTradeListRow({
       )}
       <tr>
         <DiffCell className="text-right" diff={diff}>
-          {lastPrice
-            ? formatAmount(lastPrice?.toNumber(), {
+          {lastDisplayPrice
+            ? formatAmount(lastDisplayPrice?.toNumber(), {
                 minimumFractionDigits: priceDecimalPlaces,
                 maximumFractionDigits: priceDecimalPlaces,
               })

@@ -62,15 +62,12 @@ import {
   immediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
 import {
-  DexPlaceLimitOrderEvent,
   DexTickUpdateEvent,
-  DexTickUpdateReservesEvent,
-  DexTickUpdateTrancheEvent,
+  getTxEventsEndDisplayPrice,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import {
   displayPriceToTickIndex,
-  tickIndexToDisplayPrice,
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
@@ -776,49 +773,21 @@ function LimitOrder({
         setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
       }
       // set market price slippage result: based on trade simulation end price
-      else if (priceTab === 'Swap' && simulationResult?.result) {
-        const events = simulationResult.result?.events.map(mapEventAttributes);
-        // determine is this swap produced a tranche key (it should not)
-        const resultTrancheKey = events.find(
-          (event): event is DexPlaceLimitOrderEvent =>
-            (event as DexPlaceLimitOrderEvent).attributes.action ===
-            'PlaceLimitOrder'
-        )?.attributes.TrancheKey;
-        // get price events
-        const orderPriceEvents = events
-          // match reserve updates
-          .filter<DexTickUpdateReservesEvent | DexTickUpdateTrancheEvent>(
-            (event): event is DexTickUpdateReservesEvent =>
-              // match reserves event
-              !!(event as DexTickUpdateReservesEvent).attributes.TickIndex &&
-              // unmatch result tranch event
-              // note: this should be removable after the chain update to sdk-50
-              (!resultTrancheKey ||
-                (event as DexTickUpdateTrancheEvent).attributes.TrancheKey !==
-                  resultTrancheKey)
-          );
-        // determine the resulting price
-        const orderPriceEventIndexes = orderPriceEvents?.map(
-          (event) =>
-            Number(event.attributes.TickIndex) *
-            (event.attributes.TokenIn === tokenA.base ? -1 : 1)
-        );
-        const endPriceTickIndex = buyMode
-          ? Math.max(...orderPriceEventIndexes)
-          : Math.min(...orderPriceEventIndexes);
-        const endDisplayPrice =
-          Number.isFinite(endPriceTickIndex) &&
-          tickIndexToDisplayPrice(
-            new BigNumber(endPriceTickIndex),
-            tokenA,
-            tokenB
-          )?.toNumber();
+      else if (
+        priceTab === 'Swap' &&
+        tokenA &&
+        tokenB &&
+        simulationResult?.result
+      ) {
+        // get end price of simulated tx
+        const events = simulationResult.result.events.map(mapEventAttributes);
+        const displayPrice = getTxEventsEndDisplayPrice(events, tokenA, tokenB);
         // prevent showing "incorrect side" price by limiting to current price
         // note: this isn't strictly correct but looks better: a race condition
         //       can form because endDisplayPrice is a chain response result and
         //       currentPriceAtoB is an indexer response result.
         const possibleDisplayPrices: number[] = [
-          endDisplayPrice,
+          displayPrice?.toNumber(),
           currentPriceAtoB,
         ].filter((price): price is number => typeof price === 'number');
         setPriceIndication(
