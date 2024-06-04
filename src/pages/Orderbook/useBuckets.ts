@@ -87,20 +87,22 @@ export default function useBucketsByPriceResolution(
           const outerBound =
             precision > 0
               ? inverseDirection
-                ? Number(
-                    displayPrice.toPrecision(precision, BigNumber.ROUND_UP)
-                  )
-                : Number(
-                    displayPrice.toPrecision(precision, BigNumber.ROUND_DOWN)
-                  )
+                ? displayPrice
+                    .precision(precision, BigNumber.ROUND_UP)
+                    .toNumber()
+                : displayPrice
+                    .precision(precision, BigNumber.ROUND_DOWN)
+                    .toNumber()
               : 0;
           // get inner bound based on outer bound, but limit to current price
           const innerBound = inverseDirection
             ? Math.max(
+                // use BigNumber to avoid float imprecision (eg: 0.2+0.1)
                 new BigNumber(outerBound).minus(bucketResolution).toNumber(),
                 currentPrice
               )
             : Math.min(
+                // use BigNumber to avoid float imprecision (eg: 0.2+0.1)
                 new BigNumber(outerBound).plus(bucketResolution).toNumber(),
                 currentPrice
               );

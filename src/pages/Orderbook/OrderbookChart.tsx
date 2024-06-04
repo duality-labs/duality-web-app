@@ -407,7 +407,9 @@ export default function OrderBookChart({
           tvWidget.subscribe('mouse_up', () => {
             if (Date.now() - lastMouseDownAt < 100) {
               if (crosshair?.price) {
-                setLimitPrice?.(new BigNumber(crosshair.price).toPrecision(6));
+                setLimitPrice?.(
+                  new BigNumber(crosshair.price).precision(6).toFixed()
+                );
               }
             }
           });
