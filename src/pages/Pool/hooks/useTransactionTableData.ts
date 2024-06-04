@@ -71,6 +71,9 @@ export default function useTransactionTableData({
       tokenIdA,
       tokenIdB,
       action,
+      // note: it is important to distinguish between null and undefined here
+      //       it seems that react-query counts them are the same query key
+      typeof account,
       account,
       pageSize,
       pageOffset,
@@ -80,6 +83,8 @@ export default function useTransactionTableData({
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 
       // disable if account is specifically `null` (eg. wallet is not connected)
+      // note: this is important so there is a solid answer to the request
+      //       disabling the query for account=null will return a loading state
       if (account === null) {
         return {
           txs: [],
