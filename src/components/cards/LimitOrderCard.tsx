@@ -980,7 +980,7 @@ function LimitOrder({
         ></TokenInputGroup>
       </div>
       <div className="limit-expiry-selection my-md">
-        <Drawer expanded={formState.execution === 'GOOD_TIL_TIME'}>
+        <Drawer expanded={priceTab === 'Limit'}>
           <div className="row flex-centered">
             <div className="col my-2 mr-2">Expiry</div>
             <div className="col ml-auto">
