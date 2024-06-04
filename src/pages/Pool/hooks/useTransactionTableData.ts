@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Token, getTokenId } from '../../../lib/web3/utils/tokens';
@@ -53,6 +52,7 @@ export default function useTransactionTableData(
     tokenB: Token;
     account?: WalletAddress | null;
     action?: DexMessageAction;
+    page?: number;
     pageSize?: number;
     orderByAscending?: boolean;
   } | null
@@ -62,23 +62,15 @@ export default function useTransactionTableData(
     tokenB,
     account,
     action,
+    page = 1,
     pageSize = 10,
     orderByAscending,
   } = opts || {};
   const tokenIdA = getTokenId(tokenA) || '';
   const tokenIdB = getTokenId(tokenB) || '';
 
-  const [pageOffset] = useState<number>(0);
   return useQuery({
-    queryKey: [
-      'events',
-      tokenIdA,
-      tokenIdB,
-      action,
-      account,
-      pageSize,
-      pageOffset,
-    ],
+    queryKey: ['events', tokenIdA, tokenIdB, action, account, page, pageSize],
     enabled: !opts || !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
@@ -112,7 +104,7 @@ export default function useTransactionTableData(
        *     action ? `message.action='${action}'` : '',
        *   ].filter(Boolean),
        *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
-       *   page: Long.fromString(pageOffset + 1),
+       *   page: Long.fromString(page),
        *   limit: Long.fromString(pageSize),
        * });
        *
@@ -137,7 +129,7 @@ export default function useTransactionTableData(
               .join(' AND ')
           )}"`,
           `per_page=${pageSize}`,
-          `page=${pageOffset + 1}`,
+          `page=${page}`,
           `order_by="${orderByAscending ? 'asc' : 'desc'}"`,
         ].join('&')}`
       );
