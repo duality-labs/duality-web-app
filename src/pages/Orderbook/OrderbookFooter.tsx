@@ -96,13 +96,19 @@ function OrderbookFooterTable({
   filterToStatus?: StatusFilter;
 }) {
   const { address } = useWeb3();
-  const { data: txs, refetch } = useTransactionTableData({
-    tokenA,
-    tokenB,
-    action: 'PlaceLimitOrder',
-    account: address || null,
-    pageSize,
-  });
+  const { data: txs, refetch } = useTransactionTableData(
+    address
+      ? // show user's limit orders when connected
+        {
+          tokenA,
+          tokenB,
+          action: 'PlaceLimitOrder',
+          account: address,
+          pageSize,
+        }
+      : // don't show any data when not connected
+        null
+  );
 
   // subscribe to updates to the user's limit orders
   useOnUserDexMsg<DexPlaceLimitOrderEvent>('PlaceLimitOrder', () => {

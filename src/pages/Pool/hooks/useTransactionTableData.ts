@@ -46,21 +46,25 @@ export interface GetTxsEventResponseManuallyType {
 
 const blockTimestamps: { [height: string]: string } = {};
 
-export default function useTransactionTableData({
-  tokenA,
-  tokenB,
-  account,
-  action,
-  pageSize = 10,
-  orderByAscending,
-}: {
-  tokenA: Token;
-  tokenB: Token;
-  account?: WalletAddress | null;
-  action?: DexMessageAction;
-  pageSize?: number;
-  orderByAscending?: boolean;
-}) {
+export default function useTransactionTableData(
+  // passing opts=null means to abort: don't request, return an empty result
+  opts: {
+    tokenA: Token;
+    tokenB: Token;
+    account?: WalletAddress | null;
+    action?: DexMessageAction;
+    pageSize?: number;
+    orderByAscending?: boolean;
+  } | null
+) {
+  const {
+    tokenA,
+    tokenB,
+    account,
+    action,
+    pageSize = 10,
+    orderByAscending,
+  } = opts || {};
   const tokenIdA = getTokenId(tokenA) || '';
   const tokenIdB = getTokenId(tokenB) || '';
 
@@ -71,21 +75,18 @@ export default function useTransactionTableData({
       tokenIdA,
       tokenIdB,
       action,
-      // note: it is important to distinguish between null and undefined here
-      //       it seems that react-query counts them are the same query key
-      typeof account,
       account,
       pageSize,
       pageOffset,
     ],
-    enabled: !!(tokenIdA && tokenIdB),
+    enabled: !opts || !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 
-      // disable if account is specifically `null` (eg. wallet is not connected)
+      // disable if opts is specifically not set (eg. wallet is not connected)
       // note: this is important so there is a solid answer to the request
       //       disabling the query for account=null will return a loading state
-      if (account === null) {
+      if (!opts) {
         return {
           txs: [],
           total_count: '0',
