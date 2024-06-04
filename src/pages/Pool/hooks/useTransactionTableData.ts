@@ -1,12 +1,17 @@
+import Long from 'long';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type {
+  GetTxsEventResponse,
+  OrderBy,
+} from '@duality-labs/neutronjs/types/codegen/cosmos/tx/v1beta1/service';
 
 import { Token, getTokenId } from '../../../lib/web3/utils/tokens';
 import { guessInvertedOrder } from '../../../lib/web3/utils/pairs';
 import { DexMessageAction } from '../../../lib/web3/utils/events';
 import { WalletAddress } from '../../../lib/web3/utils/address';
 
-const { REACT_APP__RPC_API = '' } = import.meta.env;
+import { useCosmosRestClientPromise } from '../../../lib/web3/clients/restClients';
 
 type Hash = string;
 type EncodedData = string;
@@ -44,8 +49,6 @@ export interface GetTxsEventResponseManuallyType {
   };
 }
 
-const blockTimestamps: { [height: string]: string } = {};
-
 export default function useTransactionTableData({
   tokenA,
   tokenB,
@@ -64,6 +67,8 @@ export default function useTransactionTableData({
   const tokenIdA = getTokenId(tokenA) || '';
   const tokenIdB = getTokenId(tokenB) || '';
 
+  const cosmosRestClientPromise = useCosmosRestClientPromise();
+
   const [pageOffset] = useState<number>(0);
   return useQuery({
     queryKey: [
@@ -76,98 +81,75 @@ export default function useTransactionTableData({
       pageOffset,
     ],
     enabled: !!(tokenIdA && tokenIdB),
-    queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
+    queryFn: async (): Promise<GetTxsEventResponse> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 
       // disable if account is specifically `null` (eg. wallet is not connected)
       if (account === null) {
         return {
           txs: [],
-          total_count: '0',
+          tx_responses: [],
+          total: Long.ZERO,
+          pagination: {
+            total: Long.ZERO,
+          },
         };
       }
 
       /*
-       * note: you would expect the following to work, but the ABCI query check
-       * fails the event query of attribute TokenZero and TokenOne for numeric chars
-       * see: https://github.com/cosmos/cosmos-sdk/commit/18da0e9c15e0210fdd289e3f1f0f5fefe3f6b72a#diff-53f84248611b4e705fd4106d3f6f46eed9258656b0b3db22bd56fdde5628cebdR47
+       * note: there is an issue with using the REST client here, eg.
        *
-       * const QueryClientImpl = cosmos.tx.v1beta1.ServiceClientImpl;
-       * const dualityClient = new QueryClientImpl(rpc);
-       * const response = await dualityClient.getTxsEvent({
-       *   events: [
-       *     `message.module='${'dex'}'`,
-       *     !invertedOrder
-       *       ? `message.Token='${tokenIdA}'`
-       *       : `message.TokenZero='${tokenIdB}'`,
-       *     !invertedOrder
-       *       ? `message.Token='${tokenIdB}'`
-       *       : `message.TokenOne='${tokenIdA}'`,
-       *     action ? `message.action='${action}'` : '',
-       *   ].filter(Boolean),
-       *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
-       *   page: Long.fromString(pageOffset + 1),
-       *   limit: Long.fromString(pageSize),
+       * const clientResult = await cosmosRestClient.tx.v1beta1.getTxsEvent({
+       *   'events': [
+       *      `message.module='${'dex'}'`,
+       *      `message.TokenZero='${invertedOrder ? tokenIdB : tokenIdA}'`,
+       *      `message.TokenOne='${!invertedOrder ? tokenIdB : tokenIdA}'`,
+       *      ...action ? [`message.action='${action}'`] : [],
+       *      ...account ? [`message.Creator='${account}'`] : [],
+       *   ],
+       *   'limit': Long.fromNumber(pageSize),
+       *   'order_by': 2 as OrderBy.ORDER_BY_DESC,
+       *   'page': Long.fromNumber(pageOffset + 1),
+       *   'pagination': {}
        * });
        *
-       * instead we will create the query string ourself and add the return type
+       * this issue is that the base axios client in telescope will parse the
+       * "events" param differently that the chain expects, the default param
+       * serializer creates "events[]=..." params but chain expects "events=..."
+       * link: https://github.com/axios/axios/blob/v1.7.2/README.md?plain=1#L448-L459
+       * link: https://github.com/cosmology-tech/telescope/blob/%40osmonauts/telescope%400.101.3/packages/lcd/src/rest.ts#L8-L11
+       *
+       * Instead we shall craft the query ourselves
        */
 
-      const response = await fetch(
-        `${REACT_APP__RPC_API}/tx_search?${[
-          `query="${encodeURIComponent(
-            [
-              `message.module='${'dex'}'`,
-              !invertedOrder
-                ? `message.TokenZero='${tokenIdA}'`
-                : `message.TokenZero='${tokenIdB}'`,
-              !invertedOrder
-                ? `message.TokenOne='${tokenIdB}'`
-                : `message.TokenOne='${tokenIdA}'`,
-              account ? `message.Creator='${account}'` : '',
-              action ? `message.action='${action}'` : '',
-            ]
-              .filter(Boolean)
-              .join(' AND ')
-          )}"`,
-          `per_page=${pageSize}`,
-          `page=${pageOffset + 1}`,
-          `order_by="${orderByAscending ? 'asc' : 'desc'}"`,
-        ].join('&')}`
+      // note: this is brittle code and may break on a chain CosmosSDK upgrade
+      // create query params for the REST txs request
+      const queryParams = new URLSearchParams({
+        // specify DEX module
+        events: `message.module='${'dex'}'`,
+        // add expected pagination
+        order_by: orderByAscending
+          ? (1 as OrderBy.ORDER_BY_ASC).toFixed()
+          : (2 as OrderBy.ORDER_BY_DESC).toFixed(),
+        limit: (pageSize || 10).toFixed(),
+        offset: (pageOffset * pageSize).toFixed(),
+      });
+      // append extra event conditions
+      const tokenId0 = !invertedOrder ? tokenIdA : tokenIdB;
+      const tokenId1 = !invertedOrder ? tokenIdB : tokenIdA;
+      queryParams.append('events', `message.TokenZero='${tokenId0}'`);
+      queryParams.append('events', `message.TokenOne='${tokenId1}'`);
+      if (action) {
+        queryParams.append('events', `message.action='${action}'`);
+      }
+      if (account) {
+        queryParams.append('events', `message.Creator='${account}'`);
+      }
+      // make REST txs request
+      const cosmosRestClient = await cosmosRestClientPromise;
+      return cosmosRestClient.tx.v1beta1.req.get<GetTxsEventResponse>(
+        `cosmos/tx/v1beta1/txs?${queryParams.toString()}`
       );
-      const result = (await response.json()) as GetTxsEventResponseManuallyType;
-      const { total_count, txs } = result['result'];
-
-      // mutate the txs to contain block height timestamps
-      const txsWithTimestamps = await Promise.all(
-        txs.map(async (tx) => {
-          if (!blockTimestamps[tx.height]) {
-            const response = await fetch(
-              `${REACT_APP__RPC_API}/header?height=${tx.height}`
-            );
-            if (response.status === 200) {
-              const { result } = (await response.json()) as {
-                result: {
-                  header: {
-                    height: string;
-                    time: string;
-                  };
-                };
-              };
-              blockTimestamps[tx.height] = result.header.time;
-            }
-          }
-          return {
-            ...tx,
-            timestamp: blockTimestamps[tx.height],
-          };
-        })
-      );
-
-      return {
-        total_count,
-        txs: txsWithTimestamps,
-      };
     },
   });
 }
