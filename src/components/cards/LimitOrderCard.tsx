@@ -201,6 +201,45 @@ function LimitOrder({
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
 
+  // keep card trade state after switching token order
+  // or reset state if changing pairs
+  const previousPageStateRef = useRef([tokenA, tokenB]);
+  useEffect(() => {
+    const [previousTokenA, previousTokenB] = previousPageStateRef.current;
+    // change the card state if the tokens have changed
+    if (previousTokenA && previousTokenB && tokenA && tokenB) {
+      // flip trade state if token pair is exactly flipped
+      if (
+        getTokenId(previousTokenA) === getTokenId(tokenB) &&
+        getTokenId(previousTokenB) === getTokenId(tokenA)
+      ) {
+        // flip limit price
+        formSetState.setLimitPrice?.((limitPrice) => {
+          return Number(limitPrice) > 0
+            ? new BigNumber(1).div(limitPrice).precision(6).toFixed()
+            : limitPrice;
+        });
+        // flip buy/sell
+        setModeTab((modeTab) => (modeTab === 'Buy' ? 'Sell' : 'Buy'));
+      }
+      // partially "reset" form state for a different pair
+      else if (
+        getTokenId(previousTokenA) !== getTokenId(tokenA) ||
+        getTokenId(previousTokenB) !== getTokenId(tokenB)
+      ) {
+        // remove limit price
+        formSetState.setLimitPrice?.('');
+        // set market price
+        setLimitOption(0);
+        // zero the amounts
+        formSetState.setAmountInOut?.(['', '']);
+        // everything else can stay: expiry, Swap/Limit, Buy/Sell
+      }
+    }
+    // update values in state
+    previousPageStateRef.current = [tokenA, tokenB];
+  }, [formSetState, tokenA, tokenB]);
+
   const [expiration, setExpiration] = useState<ExpirationOptions>('none');
   // allow an expiration change to change the custom time amount and period
   const switchExpiration = useCallback(
