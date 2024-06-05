@@ -12,20 +12,21 @@ import {
 } from '../../lib/web3/utils/limitOrders';
 
 interface FormState {
-  amount: string;
+  amountIn: string;
+  amountOut: string;
   limitPrice: string;
   timeAmount: string;
   timePeriod: TimePeriod;
   execution: AllowedLimitOrderTypeKey;
-  slippage: string;
+  slippagePercent: string;
 }
 interface FormSetState {
-  setAmount: Dispatch<SetStateAction<FormState['amount']>>;
+  setAmountInOut: Dispatch<SetStateAction<[string, string]>>;
   setLimitPrice: Dispatch<SetStateAction<FormState['limitPrice']>>;
   setTimeAmount: Dispatch<SetStateAction<FormState['timeAmount']>>;
   setTimePeriod: Dispatch<SetStateAction<FormState['timePeriod']>>;
   setExecution: Dispatch<SetStateAction<FormState['execution']>>;
-  setSlippage: Dispatch<SetStateAction<FormState['slippage']>>;
+  setSlippagePercent: Dispatch<SetStateAction<FormState['slippagePercent']>>;
 }
 
 export const LimitOrderFormContext = createContext<Partial<FormState>>({});
@@ -40,40 +41,49 @@ export function LimitOrderContextProvider({
   defaultExecutionType: AllowedLimitOrderTypeKey;
   children: ReactNode;
 }) {
-  const [amount, setAmount] = useState('');
+  const [amountInOut, setAmountInOut] = useState<[string, string]>(['', '']);
   const [limitPrice, setLimitPrice] = useState('');
-  const [timeAmount, setTimeAmount] = useState('28');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('days');
+  const [timeAmount, setTimeAmount] = useState('1');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('hours');
   const [execution, setExecution] = useState(defaultExecutionType);
-  const [slippage, setSlippage] = useState('');
+  const [slippagePercent, setSlippagePercent] = useState('0.5');
 
   const state = useMemo(() => {
+    const [amountIn, amountOut] = amountInOut;
     return {
-      amount,
+      amountIn,
+      amountOut,
       limitPrice,
       timeAmount,
       timePeriod,
       execution,
-      slippage,
+      slippagePercent,
     };
-  }, [amount, limitPrice, timeAmount, timePeriod, execution, slippage]);
+  }, [
+    amountInOut,
+    limitPrice,
+    timeAmount,
+    timePeriod,
+    execution,
+    slippagePercent,
+  ]);
 
   const setState = useMemo(() => {
     return {
-      setAmount,
+      setAmountInOut,
       setLimitPrice,
       setTimeAmount,
       setTimePeriod,
       setExecution,
-      setSlippage,
+      setSlippagePercent,
     };
   }, [
-    setAmount,
+    setAmountInOut,
     setLimitPrice,
     setTimeAmount,
     setTimePeriod,
     setExecution,
-    setSlippage,
+    setSlippagePercent,
   ]);
 
   return (

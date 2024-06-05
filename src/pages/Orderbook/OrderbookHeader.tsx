@@ -9,8 +9,8 @@ import TokenPairPicker from '../../components/TokenPicker/TokenPairPicker';
 
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
 import {
-  useRealtimePrice,
-  useStatPrice,
+  useRealtimeDisplayPrice,
+  useStatDisplayPrice,
   useStatVolume,
 } from '../../components/stats/hooks';
 
@@ -118,8 +118,8 @@ function OrderbookStatsRow({
 }
 
 function StatColPrice({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
-  const [, price, priceDiff] = useStatPrice(tokenA, tokenB);
-  const [, realtimePrice = price] = useRealtimePrice(tokenA, tokenB);
+  const [, price, priceDiff] = useStatDisplayPrice(tokenA, tokenB);
+  const [, realtimePrice = price] = useRealtimeDisplayPrice(tokenA, tokenB);
   const previousPrice =
     !isNaN(price ?? NaN) && !isNaN(priceDiff ?? NaN)
       ? Number(price) - Number(priceDiff)
@@ -149,12 +149,12 @@ function StatColPriceHigh({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [, price] = useStatPrice(tokenA, tokenB, 'high');
+  const [, price] = useStatDisplayPrice(tokenA, tokenB, 'high');
   return <StatCol heading="24H High" value={price ?? undefined} />;
 }
 
 function StatColPriceLow({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
-  const [, price] = useStatPrice(tokenA, tokenB, 'low');
+  const [, price] = useStatDisplayPrice(tokenA, tokenB, 'low');
   return <StatCol heading="24H Low" value={price ?? undefined} />;
 }
 

@@ -12,7 +12,10 @@ import {
 } from './utils';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import {
+  tickIndexToDisplayPrice,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import { useIndexerStreamLastUpdateOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
@@ -110,13 +113,16 @@ function useStatTokenValue(
 }
 
 // Real-time price
-function getLastPriceValue([, , , close]: number[]): number[] {
-  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+function getLastPriceTickIndexValue([, , , close]: number[]): number {
+  return close;
 }
-export function useRealtimePrice(
+function useRealtimePriceTickIndex(
   tokenA: Token | undefined,
   tokenB: Token | undefined
-): [timeUnix: number | null | undefined, priceBtoA: number | null | undefined] {
+): [
+  timeUnix: number | null | undefined,
+  tickIndexBtoA: number | null | undefined
+] {
   // fetch most recent value with a page limit
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
@@ -148,7 +154,32 @@ export function useRealtimePrice(
     ? mostRecentUpdate
     : latestDataUpdate?.data[0] ?? [null, null, null];
   // return single values from data
-  return [timeUnix, lastRow && getLastPriceValue(lastRow)[0]];
+  return [timeUnix, lastRow && getLastPriceTickIndexValue(lastRow)];
+}
+export function useRealtimeBasePrice(
+  tokenA: Token | undefined,
+  tokenB: Token | undefined
+): [timeUnix: number | null | undefined, priceBtoA: number | null | undefined] {
+  const [timeUnix, tickIndex] = useRealtimePriceTickIndex(tokenA, tokenB);
+  return [
+    timeUnix,
+    tickIndex && tickIndexToPrice(new BigNumber(tickIndex)).toNumber(),
+  ];
+}
+export function useRealtimeDisplayPrice(
+  tokenA: Token | undefined,
+  tokenB: Token | undefined
+): [timeUnix: number | null | undefined, priceBtoA: number | null | undefined] {
+  const [timeUnix, tickIndex] = useRealtimePriceTickIndex(tokenA, tokenB);
+  return [
+    timeUnix,
+    tickIndex &&
+      tickIndexToDisplayPrice(
+        new BigNumber(tickIndex),
+        tokenA,
+        tokenB
+      )?.toNumber(),
+  ];
 }
 
 // Price
@@ -157,7 +188,7 @@ function getStatPricePath(tokenA: Token, tokenB: Token) {
     tokenA
   )}/${getIndexerTokenPathPart(tokenB)}`;
 }
-export function useStatPrice(
+export function useStatDisplayPrice(
   tokenA: Token,
   tokenB: Token,
   attribute: 'open' | 'high' | 'low' | 'close' = 'close'
@@ -165,12 +196,14 @@ export function useStatPrice(
   const getStatPriceValues = useCallback(
     ([open, high, low, close]: number[]): number[] => {
       return [
-        tickIndexToPrice(
-          new BigNumber({ open, high, low, close }[attribute])
-        ).toNumber(),
+        tickIndexToDisplayPrice(
+          new BigNumber({ open, high, low, close }[attribute]),
+          tokenA,
+          tokenB
+        )?.toNumber() || 0,
       ];
     },
-    [attribute]
+    [attribute, tokenA, tokenB]
   );
   const [timeUnix, prices, priceDiffs] = useStatData(
     tokenA,

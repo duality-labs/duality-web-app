@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
   widget,
   IBasicDataFeed,
@@ -9,33 +8,47 @@ import {
   DatafeedConfiguration,
   ResolutionString,
   LibrarySymbolInfo,
-  SearchSymbolResultItem,
   Bar,
   Timezone,
+  VisiblePriceRange,
+  PriceScaleMode,
+  IChartWidgetApi,
+  CrossHairMovedEventParams,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
-import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
-import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import {
   IndexerPage,
   IndexerStreamAccumulateSingleDataSet,
 } from '../../lib/web3/hooks/useIndexer';
-import { days, hours, minutes, seconds } from '../../lib/utils/time';
 
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
 const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
+  custom_css_url: '/tradingview.css',
+  settings_overrides: {
+    'paneProperties.backgroundType': 'solid',
+    'paneProperties.background': '#101828', // var(--default)
+  },
   debug: !PROD,
   autosize: true,
   container: '',
   locale: 'en',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone as Timezone,
-  disabled_features: ['header_symbol_search', 'header_compare'],
-  enabled_features: [],
+  disabled_features: [
+    // disable searching for symbols inside chart: token pair search is on page
+    'header_symbol_search',
+    // disable comparing multiple symbols: can get complicated
+    'header_compare',
+    // note: the mouse panning feature is called 'chart_scroll'
+    //       disabling this ensures that the right side of chart is current time
+    //       however this isn't necessary to lock to understand the liquidity
+    //       visualization we have added to the right of it
+  ],
+  enabled_features: ['hide_left_toolbar_by_default'],
   charts_storage_url: 'https://saveload.tradingview.com',
   charts_storage_api_version: '1.1',
   // path to static assets of the charting library
@@ -66,42 +79,48 @@ interface BlockRangeRequestQuery extends RequestQuery {
 
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
+// helper function to ensure that chart is interactable
+// note: several chart methods such as chart.getVisiblePriceRange() will throw
+//       an exception if the chart exists but is not in a ready state
+//       this method should be able to detect is the chart is not in that state
+function isChartReady(chart: IChartWidgetApi | undefined) {
+  const visibleTimeScaleRange = chart?.getVisibleRange();
+  // skip calculation if timescale is not yet visible
+  // because otherwise a measurement function will throw an exception
+  return (
+    visibleTimeScaleRange &&
+    visibleTimeScaleRange.from > 0 &&
+    visibleTimeScaleRange.to
+  );
+}
+
+export interface ChartPriceAxisInfo extends VisiblePriceRange {
+  mode: PriceScaleMode;
+  height: number;
+}
 export default function OrderBookChart({
   tokenA,
   tokenB,
+  priceIndication,
+  setLimitPrice,
+  setPriceAxis,
 }: {
   tokenA: Token;
   tokenB: Token;
+  priceIndication?: number | undefined;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setLimitPrice?: (limitPrice: string) => void;
+  setPriceAxis?: React.Dispatch<
+    React.SetStateAction<ChartPriceAxisInfo | undefined>
+  >;
 }) {
-  const tokenIdA = getTokenId(tokenA);
-  const tokenIdB = getTokenId(tokenB);
-
   const navigate = useNavigate();
 
   // find chart container to fit
   const chartRef = useRef<HTMLDivElement>(null);
 
-  const { data: tokenPairReserves } = useTokenPairs();
-  const { data: tokenByDenom } = useTokenByDenom(
-    tokenPairReserves?.flatMap(([denom0, denom1]) => [denom0, denom1])
-  );
-
-  // memoize tokenPairs so we don't trigger the graph re-rendering too often
-  const tokenPairs = useDeepCompareMemoize(
-    useMemo<Array<[Token, Token]>>(() => {
-      return tokenPairReserves && tokenByDenom
-        ? tokenPairReserves
-            // find the tokens that match our known pair token IDs
-            .map(([denom0, denom1]) => {
-              return [tokenByDenom.get(denom0), tokenByDenom.get(denom1)];
-            })
-            // remove pairs with unfound tokens
-            .filter<[Token, Token]>((tokenPair): tokenPair is [Token, Token] =>
-              tokenPair.every(Boolean)
-            )
-        : [];
-    }, [tokenByDenom, tokenPairReserves])
-  );
+  // store chart widget when ready
+  const [chart, setChart] = useState<IChartWidgetApi>();
 
   // tokenPairID is made of symbols, which is different to token paths
   const tokenPairID = useMemo(() => {
@@ -111,9 +130,14 @@ export default function OrderBookChart({
   }, [tokenA, tokenB]);
 
   useEffect(() => {
+    const tokenIdA = getTokenId(tokenA);
+    const tokenIdB = getTokenId(tokenB);
+
     const supportedResolutions: ResolutionString[] = [
       '1S', // second
       '1', // minute
+      '5', // 5 minutes
+      '10', // 10 minutes
       '60', // hour
       '1D', // day
     ] as ResolutionString[];
@@ -123,17 +147,10 @@ export default function OrderBookChart({
     } = {
       '1S': 'second', // second
       '1': 'minute', // minute
+      '5': 'minute', // minute
+      '10': 'minute', // minute
       '60': 'hour', // hour
       '1D': 'day', // day
-    };
-
-    const resolutionInMsMap: {
-      [tradingViewResolution: string]: number;
-    } = {
-      '1S': 1 * seconds,
-      '1': 1 * minutes,
-      '60': 1 * hours,
-      '1D': 1 * days,
     };
 
     // keep track of data subscription state here
@@ -217,50 +234,19 @@ export default function OrderBookChart({
             supported_resolutions: supportedResolutions,
             timezone: 'Etc/UTC',
             type: 'crypto',
+            has_empty_bars: true,
           };
           setTimeout(() => {
             onSymbolResolvedCallback(symbolInfo);
           }, 0);
         },
         searchSymbols: (
-          userInput = '',
+          _userInput,
           _exchange, // will always be "Neutron"
           _symbolType, // will always be "crypto"
           onResultReadyCallback
         ) => {
-          const tokens = Array.from(new Set(tokenPairs.flatMap((v) => v)));
-          const inputs = userInput.toLowerCase().split('/');
-          const filteredTokens = tokens.filter((token) => {
-            // return a match if any of the inputs given match a token
-            return inputs.some((input) => {
-              return (
-                token.chain.chain_name.toLowerCase().includes(input) ||
-                token.name.toLowerCase().includes(input) ||
-                token.base.toLowerCase().includes(input) ||
-                token.display.toLowerCase().includes(input) ||
-                token.symbol.toLowerCase().includes(input) ||
-                token.keywords?.map((v) => v.toLowerCase()).includes(input)
-              );
-            });
-          });
-
-          const items: SearchSymbolResultItem[] = tokenPairs
-            .filter(([tokenA, tokenB]) => {
-              return (
-                filteredTokens.includes(tokenA) ||
-                filteredTokens.includes(tokenB)
-              );
-            })
-            .map(([tokenA, tokenB]) => {
-              return {
-                exchange: 'Neutron Dex',
-                symbol: `${tokenA.symbol}/${tokenB.symbol}`,
-                full_name: `${tokenA.symbol}/${tokenB.symbol}`,
-                description: `Neutron Dex pair of ${tokenA.name} and ${tokenB.name}`,
-                type: 'crypto',
-              };
-            });
-          onResultReadyCallback(items);
+          onResultReadyCallback([]);
         },
         getBars: async (
           symbolInfo,
@@ -285,46 +271,11 @@ export default function OrderBookChart({
                   if (height > (knownHeights.get(fetchID) ?? 0)) {
                     knownHeights.set(fetchID, height);
                   }
-                  const resolutionInMs = resolutionInMsMap[resolution];
-                  const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
-                    (acc, data) => {
-                      const bar = getBarFromTimeSeriesRow(data);
-                      // fill in any gaps with the last close price
-                      const lastBar = acc[acc.length - 1];
-                      const extraBars: Bar[] = [];
-                      if (lastBar && resolutionInMs) {
-                        let lastTimestamp = lastBar.time;
-                        while (lastTimestamp + resolutionInMs < bar.time) {
-                          lastTimestamp += resolutionInMs;
-                          extraBars.push({
-                            time: lastTimestamp,
-                            open: lastBar.close,
-                            high: lastBar.close,
-                            low: lastBar.close,
-                            close: lastBar.close,
-                          });
-                        }
-                      }
-                      return [...acc, ...extraBars, bar];
-                    },
-                    []
-                  );
-                  // fill in any gaps (between pages) to the earliest known bars
-                  const previousBar = firstBars.get(fetchID);
-                  const currentLastBar = bars.at(-1);
-                  if (previousBar && currentLastBar) {
-                    let lastTimestamp = currentLastBar.time;
-                    while (lastTimestamp + resolutionInMs < previousBar.time) {
-                      lastTimestamp += resolutionInMs;
-                      bars.push({
-                        time: lastTimestamp,
-                        open: currentLastBar.close,
-                        high: currentLastBar.close,
-                        low: currentLastBar.close,
-                        close: currentLastBar.close,
-                      });
-                    }
-                  }
+                  // note: the data needs to be in chronological order
+                  // and our API delivers results in reverse-chronological order
+                  const bars: Bar[] = Array.from(data)
+                    .reverse()
+                    .map(getBarFromTimeSeriesRow);
                   // record earliest bar info of this fetch
                   const firstBar = bars.at(0);
                   if (
@@ -393,26 +344,11 @@ export default function OrderBookChart({
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
               onUpdate: (dataUpdates) => {
                 let lastBar = lastBars.get(fetchID);
-                const resolutionInMs = resolutionInMsMap[resolution];
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
-                const chronologicalUpdates = dataUpdates.reverse();
+                const chronologicalUpdates = dataUpdates.slice().reverse();
                 for (const row of chronologicalUpdates) {
                   const bar = getBarFromTimeSeriesRow(row);
-                  // add extra empty bars if there would be a gap in time
-                  if (lastBar && resolutionInMs) {
-                    let lastTimestamp = lastBar.time;
-                    while (lastTimestamp + resolutionInMs < bar.time) {
-                      lastTimestamp += resolutionInMs;
-                      onRealtimeCallback({
-                        time: lastTimestamp,
-                        open: lastBar.close,
-                        high: lastBar.close,
-                        low: lastBar.close,
-                        close: lastBar.close,
-                      });
-                    }
-                  }
                   // add only bars that are new or updates to last timestamp
                   if (!lastBar || bar.time >= lastBar.time) {
                     onRealtimeCallback(bar);
@@ -445,16 +381,48 @@ export default function OrderBookChart({
         locale: 'en',
         symbol: tokenPairID,
         // start with minute resolution
-        interval: '1' as ResolutionString,
+        interval: '5' as ResolutionString,
         datafeed,
       };
 
       // create chart widget
       const tvWidget = new widget(widgetOptions);
+      tvWidget.onChartReady(() => {
+        // re-apply overrides (somtimes not applied properly)
+        if (defaultWidgetOptions.settings_overrides) {
+          tvWidget.applyOverrides(defaultWidgetOptions.settings_overrides);
+        }
+
+        const chart = tvWidget.activeChart();
+
+        // track chart onClick price
+        if (setLimitPrice) {
+          let crosshair: CrossHairMovedEventParams | undefined;
+          let lastMouseDownAt: number = 0;
+          chart.crossHairMoved().subscribe(null, (e) => (crosshair = e));
+          tvWidget.subscribe(
+            'mouse_down',
+            () => (lastMouseDownAt = Date.now())
+          );
+          tvWidget.subscribe('mouse_up', () => {
+            if (Date.now() - lastMouseDownAt < 100) {
+              if (crosshair?.price) {
+                setLimitPrice?.(
+                  new BigNumber(crosshair.price).precision(6).toFixed()
+                );
+              }
+            }
+          });
+        }
+
+        // store current widget
+        setChart(chart);
+      });
 
       // return method to cleanup widget and data subscribers
       return () => {
         // remove widget
+        setChart(undefined);
         tvWidget.remove();
         // unsubscribe all requests (both getBars and subscribeBars)
         streams.forEach((stream) => {
@@ -462,20 +430,98 @@ export default function OrderBookChart({
         });
       };
     }
-  }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
 
-  return <div className="trading-view-chart flex" ref={chartRef}></div>;
-}
+    // add specific helper function to convert between display tokens
+    function tickIndexToDisplayPriceAtoB(value: number): number {
+      return (
+        tickIndexToDisplayPrice(
+          new BigNumber(value),
+          tokenA,
+          tokenB
+        )?.toNumber() ?? NaN
+      );
+    }
 
-function getBarFromTimeSeriesRow([
-  unixTimestamp,
-  [open, high, low, close],
-]: TimeSeriesRow) {
-  return {
-    time: unixTimestamp * 1000,
-    open: tickIndexToPrice(new BigNumber(open)).toNumber(),
-    high: tickIndexToPrice(new BigNumber(high)).toNumber(),
-    low: tickIndexToPrice(new BigNumber(low)).toNumber(),
-    close: tickIndexToPrice(new BigNumber(close)).toNumber(),
-  };
+    // add specific getBarFromTimeSeriesRow for context's tokenA and tokenB
+    function getBarFromTimeSeriesRow([
+      unixTimestamp,
+      [open, high, low, close],
+    ]: TimeSeriesRow) {
+      return {
+        time: unixTimestamp * 1000,
+        open: tickIndexToDisplayPriceAtoB(open),
+        high: tickIndexToDisplayPriceAtoB(high),
+        low: tickIndexToDisplayPriceAtoB(low),
+        close: tickIndexToDisplayPriceAtoB(close),
+      };
+    }
+  }, [navigate, setLimitPrice, tokenA, tokenB, tokenPairID]);
+
+  useEffect(() => {
+    if (priceIndication && chart && isChartReady(chart)) {
+      const line = chart
+        // this function will throw an exception if chart is not ready yet
+        .createOrderLine()
+        .setLineColor('white')
+        .setPrice(priceIndication)
+        .setText('')
+        .setQuantity('');
+      return () => line.remove();
+    }
+  }, [chart, priceIndication]);
+
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const setFocused = useCallback(() => setIsFocused(true), []);
+  const setUnfocused = useCallback(() => setIsFocused(false), []);
+
+  useEffect(() => {
+    if (chart) {
+      const checkChartAxis = () => {
+        setPriceAxis?.((chartPriceAxis) => {
+          const pane = isChartReady(chart) ? chart?.getPanes()[0] : undefined;
+          const rightPriceScale = pane?.getRightPriceScales?.()?.[0];
+          // this function will throw an exception if series is not yet visible
+          const visiblePriceRange = rightPriceScale?.getVisiblePriceRange?.();
+          const newChartPriceAxis: ChartPriceAxisInfo | undefined =
+            rightPriceScale && visiblePriceRange
+              ? {
+                  from: visiblePriceRange.from,
+                  to: visiblePriceRange.to,
+                  mode: rightPriceScale.getMode(),
+                  height: pane.getHeight(),
+                }
+              : undefined;
+          if (
+            (chartPriceAxis && !newChartPriceAxis) ||
+            (!chartPriceAxis && newChartPriceAxis) ||
+            chartPriceAxis?.from !== newChartPriceAxis?.from ||
+            chartPriceAxis?.to !== newChartPriceAxis?.to ||
+            chartPriceAxis?.mode !== newChartPriceAxis?.mode ||
+            chartPriceAxis?.height !== newChartPriceAxis?.height
+          ) {
+            return newChartPriceAxis;
+          }
+          return chartPriceAxis;
+        });
+        timeout = setTimeout(checkChartAxis, isFocused ? 30 : 100);
+      };
+      let timeout = setTimeout(checkChartAxis, 0);
+      return () => {
+        clearTimeout(timeout);
+        // remove chart axis when chart is removed
+        if (!isChartReady(chart)) {
+          setPriceAxis?.(undefined);
+        }
+      };
+    }
+  }, [chart, isFocused, setPriceAxis]);
+
+  return (
+    <div
+      className="trading-view-chart flex"
+      ref={chartRef}
+      onMouseEnter={setFocused}
+      onMouseLeave={setUnfocused}
+    ></div>
+  );
 }

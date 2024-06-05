@@ -28,7 +28,7 @@ import './TokenPicker.scss';
 
 interface TokenPickerProps {
   className?: string;
-  onChange: (newToken: Token | undefined) => void;
+  onChange?: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
   disabled?: boolean;
@@ -50,7 +50,7 @@ function OpenTokenPickerButton({
   className?: string;
   value: Token | undefined;
   disabled?: boolean;
-  open: () => void;
+  open?: () => void;
   showChain?: boolean;
 }) {
   return (
@@ -59,6 +59,7 @@ function OpenTokenPickerButton({
       className={[className, 'my-1'].filter(Boolean).join(' ')}
       onClick={open}
       disabled={disabled}
+      tabIndex={open ? 0 : -1}
     >
       {value?.logo_URIs ? (
         <img

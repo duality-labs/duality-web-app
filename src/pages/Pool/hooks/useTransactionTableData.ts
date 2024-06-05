@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Token, getTokenId } from '../../../lib/web3/utils/tokens';
@@ -46,41 +45,40 @@ export interface GetTxsEventResponseManuallyType {
 
 const blockTimestamps: { [height: string]: string } = {};
 
-export default function useTransactionTableData({
-  tokenA,
-  tokenB,
-  account,
-  action,
-  pageSize = 10,
-  orderByAscending,
-}: {
-  tokenA: Token;
-  tokenB: Token;
-  account?: WalletAddress | null;
-  action?: DexMessageAction;
-  pageSize?: number;
-  orderByAscending?: boolean;
-}) {
+export default function useTransactionTableData(
+  // passing opts=null means to abort: don't request, return an empty result
+  opts: {
+    tokenA: Token;
+    tokenB: Token;
+    account?: WalletAddress | null;
+    action?: DexMessageAction;
+    page?: number;
+    pageSize?: number;
+    orderByAscending?: boolean;
+  } | null
+) {
+  const {
+    tokenA,
+    tokenB,
+    account,
+    action,
+    page = 1,
+    pageSize = 10,
+    orderByAscending,
+  } = opts || {};
   const tokenIdA = getTokenId(tokenA) || '';
   const tokenIdB = getTokenId(tokenB) || '';
 
-  const [pageOffset] = useState<number>(0);
   return useQuery({
-    queryKey: [
-      'events',
-      tokenIdA,
-      tokenIdB,
-      action,
-      account,
-      pageSize,
-      pageOffset,
-    ],
-    enabled: !!(tokenIdA && tokenIdB),
+    queryKey: ['events', tokenIdA, tokenIdB, action, account, page, pageSize],
+    enabled: !opts || !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 
-      // disable if account is specifically `null` (eg. wallet is not connected)
-      if (account === null) {
+      // disable if opts is specifically not set (eg. wallet is not connected)
+      // note: this is important so there is a solid answer to the request
+      //       disabling the query for account=null will return a loading state
+      if (!opts) {
         return {
           txs: [],
           total_count: '0',
@@ -106,7 +104,7 @@ export default function useTransactionTableData({
        *     action ? `message.action='${action}'` : '',
        *   ].filter(Boolean),
        *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
-       *   page: Long.fromString(pageOffset + 1),
+       *   page: Long.fromString(page),
        *   limit: Long.fromString(pageSize),
        * });
        *
@@ -131,7 +129,7 @@ export default function useTransactionTableData({
               .join(' AND ')
           )}"`,
           `per_page=${pageSize}`,
-          `page=${pageOffset + 1}`,
+          `page=${page}`,
           `order_by="${orderByAscending ? 'asc' : 'desc'}"`,
         ].join('&')}`
       );

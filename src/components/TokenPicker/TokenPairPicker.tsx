@@ -45,7 +45,7 @@ function OpenTokenPairPickerButton({
   className?: string;
   value: TokenPair | undefined;
   disabled?: boolean;
-  open: () => void;
+  open?: () => void;
 }) {
   const [tokenA, tokenB] = value || [];
   return (

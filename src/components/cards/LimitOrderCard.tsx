@@ -1,9 +1,9 @@
 import Long from 'long';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import {
-  createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -15,9 +15,6 @@ import type {
   LimitOrderType,
   MsgPlaceLimitOrder,
 } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
-
-import TabsCard from './TabsCard';
-import Tabs from '../Tabs';
 
 import {
   Token,
@@ -43,14 +40,16 @@ import {
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
 import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useRealtimePrice } from '../stats/hooks';
+import { useRealtimeDisplayPrice } from '../stats/hooks';
 
-import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
+import TokenInputGroup from '../TokenInputGroup';
+import NumberInput from '../inputs/NumberInput';
 import {
   LimitOrderContextProvider,
   LimitOrderFormContext,
   LimitOrderFormSetContext,
 } from './LimitOrderContext';
+import RadioButtonGroupInput from '../RadioButtonGroupInput/RadioButtonGroupInput';
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
 import {
@@ -59,20 +58,23 @@ import {
   timePeriodLabels,
   TimePeriod,
   AllowedLimitOrderTypeKey,
-  inputOrderTypes,
-  orderTypeTextMap,
   nonImmediateOrderTypes,
   immediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
 import {
-  DexTickUpdateEvent,
+  getTxEventsEndDisplayPrice,
+  getTxEventsEndTickIndexInToOut,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import {
   displayPriceToTickIndex,
+  priceToTickIndex,
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
+
+import AssetIcon from '../assets/AssetIcon';
+import AssetSymbol from '../assets/AssetName';
 
 import Drawer from '../Drawer';
 
@@ -82,123 +84,245 @@ const [, priceMaxIndex = Number.MAX_SAFE_INTEGER] =
 
 const defaultExecutionType: AllowedLimitOrderTypeKey = 'FILL_OR_KILL';
 
-function formatNumericAmount(defaultValue = '') {
-  return (amount: number | string) => {
-    return amount
-      ? formatAmount(
-          amount,
-          { useGrouping: false },
-          { reformatSmallValues: false }
-        )
-      : defaultValue;
-  };
-}
-
-const TabContext = createContext<
-  [
-    tabIndex?: number,
-    setTabIndex?: React.Dispatch<React.SetStateAction<number>>
-  ]
->([]);
-
 export default function LimitOrderCard({
   tokenA,
   tokenB,
+  getSetLimitPrice,
+  setPriceIndication,
 }: {
   tokenA?: Token;
   tokenB?: Token;
+  getSetLimitPrice?: (setLimitPrice: (limitPrice: string) => void) => void;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   return (
-    <TabContext.Provider value={useState(0)}>
-      <TabsCard
-        className="flex limitorder-card"
-        style={{
-          // fix width to a minimum for most pairs to be displayed comfortably
-          minWidth: '24.5em',
-        }}
-        tabs={useMemo(() => {
-          return [
-            {
-              nav: 'Buy',
-              Tab: () => <LimitOrderNav tokenA={tokenA} tokenB={tokenB} />,
-            },
-            {
-              nav: 'Sell',
-              Tab: () => <LimitOrderNav tokenA={tokenA} tokenB={tokenB} sell />,
-            },
-          ];
-        }, [tokenA, tokenB])}
-      />
-    </TabContext.Provider>
-  );
-}
-
-function LimitOrderNav({
-  tokenA,
-  tokenB,
-  sell = false,
-}: {
-  tokenA?: Token;
-  tokenB?: Token;
-  sell?: boolean;
-}) {
-  const [tabIndex, setTabIndex] = useContext(TabContext);
-  const tabs = useMemo(() => {
-    const props = { tokenA, tokenB, sell };
-    return [
-      {
-        nav: 'Limit',
-        Tab: () => <LimitOrder {...props} showLimitPrice />,
-      },
-      {
-        nav: 'Market',
-        Tab: () => <LimitOrder {...props} />,
-      },
-    ];
-  }, [tokenA, tokenB, sell]);
-
-  return (
-    <div className="p-md pt-4">
-      <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
-        <Tabs
-          className="limitorder-type"
-          tabs={tabs}
-          value={tabIndex}
-          onChange={setTabIndex}
-        />
-      </LimitOrderContextProvider>
+    <div className="page-card flex limitorder-card py-0 px-md">
+      {tokenA && tokenB && (
+        <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
+          <LimitOrder
+            tokenA={tokenA}
+            tokenB={tokenB}
+            getSetLimitPrice={getSetLimitPrice}
+            setPriceIndication={setPriceIndication}
+          />
+        </LimitOrderContextProvider>
+      )}
     </div>
   );
 }
 
-const userBankBalanceRangePercentages = [0, 0.1, 0.25, 0.5, 0.75, 1];
+const modeTabs = ['Buy', 'Sell'] as const;
+type ModeTab = typeof modeTabs[number];
+
+const priceTabs = ['Swap', 'Limit'] as const;
+type PriceTab = typeof priceTabs[number];
+
+const expirationOptions = {
+  none: 'None',
+  '1 hours': '1 hour',
+  '1 days': '1 day',
+  '1 weeks': '1 week',
+  custom: 'Custom',
+} as const;
+type ExpirationOptions = keyof typeof expirationOptions;
+
+const buyLimitPriceOptions = {
+  0: 'Market',
+  1: '-1%',
+  5: '-5%',
+  10: '-10%',
+  [-1]: 'Custom',
+} as const;
+const sellLimitPriceOptions = {
+  0: 'Market',
+  1: '+1%',
+  5: '+5%',
+  10: '+10%',
+  [-1]: 'Custom',
+} as const;
+type LimitPriceOptions =
+  | keyof typeof buyLimitPriceOptions
+  | keyof typeof sellLimitPriceOptions;
+
+function getShortcutExpirationTime(
+  expiration: ExpirationOptions
+): [number, TimePeriod] | undefined {
+  const timeString = expiration.split(' ');
+  if (timeString.length >= 2) {
+    const [timeAmount, timePeriod] = timeString;
+    return [Number(timeAmount), timePeriod as TimePeriod];
+  }
+}
+function getCustomExpirationTimeMs(timeAmount: number, timePeriod: TimePeriod) {
+  return timeAmount && timePeriod
+    ? timePeriod === 'years' || timePeriod === 'months'
+      ? (() => {
+          const date = new Date();
+          if (timePeriod === 'years') {
+            date.setFullYear(date.getFullYear() + 1);
+          }
+          if (timePeriod === 'months') {
+            date.setMonth(date.getMonth() + 1);
+          }
+          return date;
+        })().getTime()
+      : new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
+    : NaN;
+}
+
+function getExpirationTimeMs(
+  expiration: ExpirationOptions,
+  formState: { timeAmount?: string; timePeriod?: TimePeriod }
+) {
+  const [timeAmount, timePeriod]: [number, TimePeriod] =
+    getShortcutExpirationTime(expiration) || [
+      Number(formState.timeAmount ?? 1),
+      formState.timePeriod || 'days',
+    ];
+  return getCustomExpirationTimeMs(timeAmount, timePeriod);
+}
 
 function LimitOrder({
   tokenA,
   tokenB,
-  sell: sellMode = false,
-  showLimitPrice = false,
+  getSetLimitPrice,
+  setPriceIndication,
 }: {
-  tokenA?: Token;
-  tokenB?: Token;
-  sell?: boolean;
-  showLimitPrice?: boolean;
+  tokenA: Token;
+  tokenB: Token;
+  getSetLimitPrice?: (setLimitPrice: (limitPrice: string) => void) => void;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
-  const buyMode = !sellMode;
-  const [denomA, denomB] = [getTokenId(tokenA), getTokenId(tokenB)];
+  const [modeTab, setModeTab] = useState<ModeTab>(modeTabs[0]);
+  const [priceTab, setPriceTab] = useState<PriceTab>(priceTabs[0]);
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
 
+  // keep card trade state after switching token order
+  // or reset state if changing pairs
+  const previousPageStateRef = useRef([tokenA, tokenB]);
+  useEffect(() => {
+    const [previousTokenA, previousTokenB] = previousPageStateRef.current;
+    // change the card state if the tokens have changed
+    if (previousTokenA && previousTokenB && tokenA && tokenB) {
+      // flip trade state if token pair is exactly flipped
+      if (
+        getTokenId(previousTokenA) === getTokenId(tokenB) &&
+        getTokenId(previousTokenB) === getTokenId(tokenA)
+      ) {
+        // flip limit price
+        formSetState.setLimitPrice?.((limitPrice) => {
+          return Number(limitPrice) > 0
+            ? new BigNumber(1).div(limitPrice).precision(6).toFixed()
+            : limitPrice;
+        });
+        // flip buy/sell
+        setModeTab((modeTab) => (modeTab === 'Buy' ? 'Sell' : 'Buy'));
+      }
+      // partially "reset" form state for a different pair
+      else if (
+        getTokenId(previousTokenA) !== getTokenId(tokenA) ||
+        getTokenId(previousTokenB) !== getTokenId(tokenB)
+      ) {
+        // remove limit price
+        formSetState.setLimitPrice?.('');
+        // set market price
+        setLimitOption(0);
+        // zero the amounts
+        formSetState.setAmountInOut?.(['', '']);
+        // everything else can stay: expiry, Swap/Limit, Buy/Sell
+      }
+    }
+    // update values in state
+    previousPageStateRef.current = [tokenA, tokenB];
+  }, [formSetState, tokenA, tokenB]);
+
+  const [expiration, setExpiration] = useState<ExpirationOptions>('none');
+  // allow an expiration change to change the custom time amount and period
+  const switchExpiration = useCallback(
+    (newExpiration: ExpirationOptions) => {
+      // when selecting custom time: prefill the form with the previous shortcut
+      if (newExpiration === 'custom') {
+        const timeParts = expiration.split(' ') as [string, TimePeriod];
+        if (timeParts.length > 1) {
+          const [timeAmount, timePeriod] = timeParts;
+          formSetState.setTimeAmount?.(timeAmount);
+          formSetState.setTimePeriod?.(timePeriod);
+        }
+      }
+      setExpiration(newExpiration);
+    },
+    [formSetState, expiration]
+  );
+  const hasExpiry = expiration !== 'none';
+
+  const switchModeTab = useCallback(
+    (newModeTab: ModeTab) => {
+      // change tab
+      setModeTab(newModeTab);
+      // set new amount and estimated exchange rate
+      if (modeTab !== newModeTab) {
+        formSetState.setAmountInOut?.(([a, b]) => [b, a]);
+      }
+    },
+    [formSetState, modeTab]
+  );
+
+  const switchPriceTab = useCallback(
+    (newPriceTab: PriceTab) => {
+      // change tab
+      setPriceTab(newPriceTab);
+      // enforce changed execution type
+      const newExec =
+        newPriceTab === 'Limit' ? 'GOOD_TIL_TIME' : 'FILL_OR_KILL';
+      formSetState.setExecution?.(newExec);
+    },
+    [formSetState]
+  );
+
+  const cardModeNav = (
+    <div className="row">
+      <h3 className="h4 pb-0 pt-lg pr-md">Trade</h3>
+      <div className="col ml-auto">
+        <RadioButtonGroupInput<PriceTab>
+          className="order-type-input my-4"
+          values={priceTabs}
+          value={priceTab}
+          onChange={switchPriceTab}
+        />
+      </div>
+      <div className="col ml-md h3">
+        <RadioButtonGroupInput<ModeTab>
+          className="order-type-input my-4"
+          values={modeTabs}
+          value={modeTab}
+          onChange={switchModeTab}
+        />
+      </div>
+    </div>
+  );
+
+  const buyMode = modeTab === 'Buy';
+  const [denomA, denomB] = [getTokenId(tokenA), getTokenId(tokenB)];
+
   const tokenIn = !buyMode ? tokenB : tokenA;
   const tokenOut = buyMode ? tokenB : tokenA;
-  const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
+  const denomIn = getTokenId(tokenIn);
   const { data: userBalanceTokenIn, isLoading: isLoadingUserBalanceTokenIn } =
     useBankBalanceBaseAmount(denomIn);
-  const { data: userBalanceTokenOut } = useBankBalanceBaseAmount(denomOut);
   const { data: userBalanceTokenInDisplayAmount } =
     useBankBalanceDisplayAmount(denomIn);
   const { meta } = useTokenPairMapLiquidity([denomA, denomB]);
+
+  const setAmountIn = useCallback(
+    (v: string) => formSetState?.setAmountInOut?.([v, '']),
+    [formSetState]
+  );
+  const setAmountOut = useCallback(
+    (v: string) => formSetState?.setAmountInOut?.(['', v]),
+    [formSetState]
+  );
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
     [denomA, denomB].filter((denom): denom is string => !!denom)
@@ -206,133 +330,127 @@ function LimitOrder({
 
   const { address, connectWallet } = useWeb3();
 
-  const [tokenInBalanceFraction, setTokenInBalanceFraction] =
-    useState<number>();
-
-  const buyAmountSimulatedMsgPlaceLimitOrder = useMemo<
-    MsgPlaceLimitOrder | undefined
-  >(() => {
-    if (address && userBalanceTokenIn && tokenInBalanceFraction !== undefined) {
-      const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
-      if (
-        denomIn &&
-        denomOut &&
-        userBalanceTokenIn &&
-        Number(userBalanceTokenIn) > 0 &&
-        tokenInBalanceFraction > 0
-      ) {
-        return {
-          amount_in: new BigNumber(userBalanceTokenIn)
-            .multipliedBy(tokenInBalanceFraction)
-            .toFixed(0),
-          token_in: denomIn,
-          token_out: denomOut,
-          creator: address,
-          receiver: address,
-          order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
-          // don't use a limit to find target amount in
-          tick_index_in_to_out: Long.fromNumber(priceMaxIndex),
-        };
-      }
-    }
-  }, [address, tokenIn, tokenInBalanceFraction, tokenOut, userBalanceTokenIn]);
-  const {
-    data: buyAmountSimulationResult,
-    isValidating: isValidatingBuyAmountSimulationResult,
-  } = useSimulatedLimitOrderResult(buyAmountSimulatedMsgPlaceLimitOrder, {
-    // invalidate the request cache when the liquidity height changes
-    keepPreviousData:
-      Number(buyAmountSimulatedMsgPlaceLimitOrder?.amount_in) > 0,
-    memo: `height of ${meta?.height}`,
-  });
-
-  const {
-    amountInDisplayAmount,
-    amountInBaseAmount,
-    amountOutDisplayAmount,
-    amountOutBaseAmount,
-  } = useMemo(() => {
+  const { amountInBaseAmount, amountOutBaseAmount } = useMemo(() => {
     if (tokenIn && tokenOut) {
-      // get amount in from input in sell mode or the slider in buy mode
-      const amountInBaseAmount = !buyMode
-        ? // get amount in from sell mode (in base amount to round input correctly)
-          getBaseDenomAmount(tokenIn, formState.amount || 0)
-        : // in buy mode get the input slider value only if defined
-          (tokenInBalanceFraction !== undefined &&
-            new BigNumber(userBalanceTokenIn || 0)
-              .multipliedBy(tokenInBalanceFraction || 0)
-              .toFixed(0)) ||
-          undefined;
-      // get amount out from buy mode
-      const amountOutBaseAmount =
-        (buyMode || undefined) &&
-        (buyAmountSimulationResult || isValidatingBuyAmountSimulationResult
-          ? // if we have a buy simulation result then show it or loading state
-            buyAmountSimulationResult?.response?.taker_coin_out.amount ?? ''
-          : // else use value directly (in base amount to round input correctly)
-            getBaseDenomAmount(tokenOut, formState.amount || 0));
-
       // return converted values for convenience
       return {
-        amountInBaseAmount,
-        amountInDisplayAmount: !buyMode
-          ? formState.amount
-          : amountInBaseAmount &&
-            getDisplayDenomAmount(tokenIn, amountInBaseAmount),
-        amountOutBaseAmount,
-        amountOutDisplayAmount:
-          buyAmountSimulationResult || isValidatingBuyAmountSimulationResult
-            ? amountOutBaseAmount &&
-              getDisplayDenomAmount(tokenOut, amountOutBaseAmount, {
-                // output a little more rounded than usual for form inputs
-                fractionalDigits: 3,
-                significantDigits: 5,
-              })
-            : formState.amount,
+        amountInBaseAmount: formState.amountIn
+          ? getBaseDenomAmount(tokenIn, formState.amountIn || 0)
+          : undefined,
+        amountOutBaseAmount: formState.amountOut
+          ? getBaseDenomAmount(tokenOut, formState.amountOut || 0)
+          : undefined,
       };
     }
     return {};
-  }, [
-    buyAmountSimulationResult,
-    buyMode,
-    formState.amount,
-    isValidatingBuyAmountSimulationResult,
-    tokenInBalanceFraction,
-    tokenIn,
-    tokenOut,
-    userBalanceTokenIn,
-  ]);
+  }, [tokenIn, tokenOut, formState.amountIn, formState.amountOut]);
 
-  const [, currentPrice] = useRealtimePrice(tokenIn, tokenOut);
+  const [, currentPriceAtoB] = useRealtimeDisplayPrice(tokenA, tokenB);
+  const currentPriceInToOut = currentPriceAtoB
+    ? tokenA === tokenIn
+      ? currentPriceAtoB
+      : 1 / currentPriceAtoB
+    : undefined;
+
+  const [limitOption, setLimitOption] = useState<LimitPriceOptions>(0);
+
+  // combine offset and current price to get dynamic limit price
+  const offsetLimitPrice = useMemo<string | undefined>(() => {
+    if (currentPriceAtoB && limitOption >= 0) {
+      return formatAmount(
+        new BigNumber(currentPriceAtoB)
+          .multipliedBy(1 + (buyMode ? -limitOption : limitOption) / 100)
+          .toFixed(),
+        { maximumSignificantDigits: 6 }
+      );
+    }
+  }, [buyMode, currentPriceAtoB, limitOption]);
+
+  const switchLimitOption = useCallback(
+    (limitOption: LimitPriceOptions) => {
+      // set value
+      setLimitOption(limitOption);
+      // remove custom limit price if setting one here
+      if (Number(limitOption) >= 0) {
+        formSetState.setLimitPrice?.('');
+      } else {
+        formSetState.setLimitPrice?.(offsetLimitPrice || '');
+      }
+    },
+    [formSetState, offsetLimitPrice]
+  );
+
+  // pass up a callback for parents to set the limit price here
+  useEffect(() => {
+    getSetLimitPrice?.((limitPriceString) => {
+      const limitPrice = Number(limitPriceString);
+      if (currentPriceAtoB && limitPrice && !isNaN(limitPrice)) {
+        setPriceTab('Limit');
+        switchLimitOption(-1);
+        setModeTab(currentPriceAtoB > limitPrice ? 'Buy' : 'Sell');
+        formSetState.setLimitPrice?.(limitPriceString);
+      } else {
+        switchLimitOption(0);
+      }
+    });
+  }, [currentPriceAtoB, formSetState, getSetLimitPrice, switchLimitOption]);
+
+  // detect when the user has asked for a limit "outside liquidity bounds"
+  // in these cases the simulation won't help because it can only compute the
+  // immediate result of the msg tx: the future amountOut must be estimated
+  const outsideBounds =
+    // ensure bounds can be calculated
+    currentPriceAtoB &&
+    formState.limitPrice &&
+    formState.execution &&
+    // check if the user is using a limit order
+    // ie. the user may have requested a price outside liquidity bounds
+    priceTab === 'Limit' &&
+    // check if the user is using a non-immediate order type
+    // ie. the order may not be filled immediately in the simulation
+    nonImmediateOrderTypes.includes(
+      orderTypeEnum[formState.execution] as number
+    ) &&
+    // check if the user requested a price outside liquidity bounds
+    // ie. the order may not be filled immediately in the simulation
+    (buyMode
+      ? new BigNumber(formState.limitPrice).lt(currentPriceAtoB)
+      : new BigNumber(formState.limitPrice).gt(currentPriceAtoB));
+
+  // the best estimated price will depend on whether the limit is out of bounds
+  const [lastKnownPrice, setLastKnownPrice] = useState<number>(0);
+  const estimatedPriceInToOut =
+    outsideBounds && formState.limitPrice
+      ? // calculate limitPriceInToOut value
+        tokenA === tokenIn
+        ? new BigNumber(formState.limitPrice).toNumber()
+        : new BigNumber(1).dividedBy(formState.limitPrice).toNumber()
+      : // or use last known price (for more accuracy)
+      // falling back to current price (for less accuracy)
+      lastKnownPrice && Number.isFinite(lastKnownPrice)
+      ? lastKnownPrice
+      : currentPriceInToOut || 0;
 
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
     useMemo(() => {
       const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
 
       const execution = formState.execution;
-      const timePeriod = formState.timePeriod;
-      const timeAmount = Number(formState.timeAmount ?? NaN);
-      const limitPrice = Number(formState.limitPrice || NaN); // do not allow 0
-      // calculate the expiration time in JS epoch (milliseconds)
-      const expirationTimeMs =
-        timeAmount && timePeriod
-          ? new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
-          : NaN;
+      // find limit price from custom limit price or limit price offset
+      // calculation, and do not pass 0: allow NaN to act as market price
+      const limitPrice = Number(
+        formState.limitPrice || (priceTab === 'Limit' ? offsetLimitPrice : NaN)
+      );
 
       // find amounts in/out for the order
       // in buy mode: buy the amount out with the user's available balance
-      const amountIn =
-        amountInBaseAmount ||
-        // use bank balance in buy mode if amount was not defined by slider
-        (buyMode ? userBalanceTokenIn : undefined);
+      const amountIn = amountInBaseAmount || userBalanceTokenIn;
       // use amount out to set the order limit only if the amount in is not set
       const maxAmountOut = amountOutBaseAmount;
 
       // check format of request
       if (
         execution &&
-        (execution === 'GOOD_TIL_TIME' ? !isNaN(expirationTimeMs) : true) &&
-        (execution === 'GOOD_TIL_TIME' ? timePeriod !== undefined : true) &&
         address &&
         denomIn &&
         denomOut &&
@@ -368,13 +486,13 @@ function LimitOrder({
           order_type: orderTypeEnum[execution] as LimitOrderType,
           // if no limit assume market value
           tick_index_in_to_out:
-            limitTickIndexInToOut !== undefined
+            limitTickIndexInToOut !== undefined && priceTab === 'Limit'
               ? Long.fromNumber(limitTickIndexInToOut.toNumber())
               : Long.fromNumber(priceMaxIndex),
         };
         // optional params
         // only add maxOut for buy orders
-        if (tokenOut && maxAmountOut && currentPrice) {
+        if (tokenOut && maxAmountOut && estimatedPriceInToOut) {
           // set max out on taker orders
           if (
             immediateOrderTypes.includes(orderTypeEnum[execution] as number)
@@ -385,7 +503,7 @@ function LimitOrder({
           }
           // set an estimated max in instead for non-immediate orders
           else {
-            // note: this is a bit or an awkward estimation that goes from the
+            // note: this is a bit of an awkward estimation that goes from the
             //       user's set limit to the current price
             const estimatedTokenIn =
               Number(maxAmountOut) *
@@ -393,7 +511,7 @@ function LimitOrder({
                 tickIndexToPrice(
                   limitTickIndexInToOut ?? new BigNumber(priceMaxIndex)
                 ),
-                currentPrice
+                estimatedPriceInToOut
               ).toNumber();
             msgPlaceLimitOrder.amount_in = BigNumber.min(
               msgPlaceLimitOrder.amount_in,
@@ -402,11 +520,19 @@ function LimitOrder({
           }
         }
         // only add expiration time to timed limit orders
-        if (execution === 'GOOD_TIL_TIME' && !isNaN(expirationTimeMs)) {
-          msgPlaceLimitOrder.expiration_time = {
-            seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
-            nanos: 0,
-          };
+        if (formState.execution === 'GOOD_TIL_TIME') {
+          const expirationTimeMs = getExpirationTimeMs(expiration, {
+            timeAmount: '1',
+            timePeriod: 'days',
+          });
+          if (hasExpiry && !isNaN(expirationTimeMs)) {
+            msgPlaceLimitOrder.expiration_time = {
+              seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
+              nanos: 0,
+            };
+          } else {
+            msgPlaceLimitOrder.order_type = orderTypeEnum['GOOD_TIL_CANCELLED'];
+          }
         }
         return msgPlaceLimitOrder;
       }
@@ -415,36 +541,47 @@ function LimitOrder({
       amountInBaseAmount,
       amountOutBaseAmount,
       buyMode,
-      currentPrice,
+      estimatedPriceInToOut,
+      expiration,
       formState.execution,
       formState.limitPrice,
-      formState.timeAmount,
-      formState.timePeriod,
+      hasExpiry,
+      offsetLimitPrice,
+      priceTab,
       tokenIn,
       tokenOut,
       userBalanceTokenIn,
     ]);
 
-  const lastSimulatedMsgPlaceLimitOrder = useRef<MsgPlaceLimitOrder>();
+  // keep track of whether the simulation result was calculated on the given
+  // user inputs (but the dex price may be different) by tracking last msg
+  const [lastSimulatedMsgPlaceLimitOrder, setLastSimulatedMsgPlaceLimitOrder] =
+    useState<MsgPlaceLimitOrder>();
+  const simulationResultMatchesInput = useMemo(() => {
+    return (
+      simulatedMsgPlaceLimitOrder !== undefined &&
+      lastSimulatedMsgPlaceLimitOrder === simulatedMsgPlaceLimitOrder
+    );
+  }, [lastSimulatedMsgPlaceLimitOrder, simulatedMsgPlaceLimitOrder]);
+
   const { data: simulationResult, isValidating: isValidatingSimulation } =
     useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder, {
       // if the limit order payload hasn't changed then keep the previous data
       keepPreviousData:
         // don't keep when input goes to 0
-        (Number(simulatedMsgPlaceLimitOrder?.amount_in) > 0 &&
-          // if in buy amount calculation mode let it pass
-          buyAmountSimulationResult?.response !== undefined) ||
+        Number(simulatedMsgPlaceLimitOrder?.amount_in) > 0 ||
         // don't change if input exists and hasn't changed
-        (simulatedMsgPlaceLimitOrder !== undefined &&
-          lastSimulatedMsgPlaceLimitOrder.current ===
-            simulatedMsgPlaceLimitOrder),
+        simulationResultMatchesInput,
       // invalidate the request cache when the liquidity height changes
       memo: `height of ${meta?.height}`,
     });
   // update last simulatedMsgPlaceLimitOrder for comparison on the next render
   useEffect(() => {
-    lastSimulatedMsgPlaceLimitOrder.current = simulatedMsgPlaceLimitOrder;
-  }, [simulatedMsgPlaceLimitOrder]);
+    // set only after simulation result has been found
+    if (!isValidatingSimulation) {
+      setLastSimulatedMsgPlaceLimitOrder(simulatedMsgPlaceLimitOrder);
+    }
+  }, [isValidatingSimulation, simulatedMsgPlaceLimitOrder]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -452,42 +589,34 @@ function LimitOrder({
 
       // define function to get the current market limit index with a tolerance
       const getMarketLimitIndex = () => {
-        // calculate last price out from result
-        const lastPriceEvent = simulationResult?.result?.events.findLast(
-          (event) => event.type === 'TickUpdate'
-        );
-
-        // if market limit simulation made no update to the liquidity then skip
-        if (!lastPriceEvent) {
-          return;
-        }
-
-        const denomIn = getTokenId(tokenIn);
-
-        // calculate tolerance from user slippage settings
+        // calculate tolerance (in ticks) from user slippage settings
         // set tiny minimum of tolerance as the frontend calculations
         // don't always exactly align with the backend calculations
-        const tolerance = Math.max(1e-12, Number(formState.slippage) || 0);
-        const toleranceFactor = 1 + tolerance;
-        // calculate last price out from matching event results
-        const lastPrice =
-          mapEventAttributes<DexTickUpdateEvent>(lastPriceEvent)?.attributes;
-        const direction =
-          lastPrice.TokenIn === denomIn
-            ? lastPrice.TokenIn === lastPrice.TokenZero
-            : lastPrice.TokenIn === lastPrice.TokenOne;
+        const slippage = Number(formState.slippagePercent) / 100 || 0;
+        const toleranceTicks = priceToTickIndex(new BigNumber(1 + slippage))
+          .decimalPlaces(0, BigNumber.ROUND_UP)
+          .toNumber();
 
-        return direction
-          ? Math.floor(Number(lastPrice.TickIndex) / toleranceFactor)
-          : Math.floor(Number(lastPrice.TickIndex) * toleranceFactor);
+        // calculate last price out from matching event results
+        const events = simulationResult?.result?.events.map(mapEventAttributes);
+        const lastTickIndex = events && getTxEventsEndTickIndexInToOut(events);
+
+        // return the limit with tolerance
+        return (
+          lastTickIndex &&
+          // apply tolerance in the in->out direction to the result tick index
+          lastTickIndex + toleranceTicks
+        );
       };
 
-      const tickIndexLimitInToOut = formState.limitPrice
-        ? displayPriceToTickIndex(
-            new BigNumber(formState.limitPrice),
-            tokenIn,
-            tokenOut
-          )
+      // find limit price from custom limit price or limit price offset
+      // calculation, and do not pass 0: allow NaN to raise errors
+      const limitPrice = Number(
+        formState.limitPrice || (limitOption > 0 ? offsetLimitPrice : NaN)
+      );
+
+      const tickIndexLimitInToOut = limitPrice
+        ? displayPriceToTickIndex(new BigNumber(limitPrice), tokenIn, tokenOut)
             ?.multipliedBy(buyMode ? 1 : -1)
             ?.toNumber()
         : getMarketLimitIndex();
@@ -498,13 +627,35 @@ function LimitOrder({
           ...simulatedMsgPlaceLimitOrder,
           tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
         };
+
+        // only add expiration time to timed limit orders
+        if (formState.execution === 'GOOD_TIL_TIME') {
+          const expirationTimeMs = getExpirationTimeMs(expiration, {
+            timeAmount: formState.timeAmount,
+            timePeriod: formState.timePeriod,
+          });
+          if (hasExpiry && !isNaN(expirationTimeMs)) {
+            msgPlaceLimitOrder.expiration_time = {
+              seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
+              nanos: 0,
+            };
+          } else {
+            msgPlaceLimitOrder.order_type = orderTypeEnum['GOOD_TIL_CANCELLED'];
+          }
+        }
+
         const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
         swapRequest(msgPlaceLimitOrder, (gasEstimate || 0) * 1.5);
       }
     },
     [
       formState.limitPrice,
-      formState.slippage,
+      formState.slippagePercent,
+      formState.execution,
+      formState.timeAmount,
+      formState.timePeriod,
+      limitOption,
+      offsetLimitPrice,
       tokenIn,
       tokenOut,
       buyMode,
@@ -512,6 +663,8 @@ function LimitOrder({
       simulationResult?.result?.events,
       simulationResult?.gasInfo?.gasUsed,
       swapRequest,
+      expiration,
+      hasExpiry,
     ]
   );
 
@@ -593,15 +746,64 @@ function LimitOrder({
     }
   }, [nativeChain, setChainFeeToken]);
 
-  const [lastKnownPrice, setLastKnownPrice] = useState<number>(0);
   useEffect(() => {
     if (simulationResult?.response) {
       const price = new BigNumber(simulationResult.response.coin_in.amount).div(
         simulationResult.response.taker_coin_out.amount
       );
+      // track last price state
       setLastKnownPrice(price.toNumber());
     }
   }, [simulationResult?.response]);
+
+  // update the price indication from the form
+  useEffect(() => {
+    if (setPriceIndication) {
+      // set limit price
+      if (priceTab === 'Limit' && limitOption !== 0) {
+        setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
+      }
+      // set market price "slippage" result: based on trade simulation end price
+      else if (
+        priceTab === 'Swap' &&
+        tokenA &&
+        tokenB &&
+        simulationResult?.result
+      ) {
+        // get end price of simulated tx
+        const events = simulationResult.result.events.map(mapEventAttributes);
+        const displayPrice = getTxEventsEndDisplayPrice(events, tokenA, tokenB);
+        // prevent showing "incorrect side" price by limiting to current price
+        // note: this isn't strictly correct but looks better: a race condition
+        //       can form because endDisplayPrice is a chain response result and
+        //       currentPriceAtoB is an indexer response result.
+        const possibleDisplayPrices: number[] = [
+          displayPrice?.toNumber(),
+          currentPriceAtoB,
+        ].filter((price): price is number => typeof price === 'number');
+        setPriceIndication(
+          (buyMode
+            ? Math.max(...possibleDisplayPrices)
+            : Math.min(...possibleDisplayPrices)) || undefined
+        );
+      }
+      // set market price if available: no simulation result
+      else {
+        setPriceIndication(currentPriceAtoB || undefined);
+      }
+    }
+  }, [
+    buyMode,
+    currentPriceAtoB,
+    formState.limitPrice,
+    limitOption,
+    offsetLimitPrice,
+    priceTab,
+    setPriceIndication,
+    simulationResult?.result,
+    tokenA,
+    tokenB,
+  ]);
 
   // find coinIn and coinOut from the simulation results
   const tranchedReserves =
@@ -622,125 +824,153 @@ function LimitOrder({
             )
           ).toNumber()
         : // use the market price or NaN
-          currentPrice ?? 0) || 0;
-  const coinIn = Number(simulationResult?.response?.coin_in.amount || 0);
+          currentPriceInToOut ?? 0) || 0;
+  const coinIn =
+    isValidatingSimulation && lastKnownPrice
+      ? amountOutBaseAmount && lastKnownPrice > 0
+        ? // don't estimate higher than the user's balance because the simulate
+          // function won't accept an input higher than the user's balance
+          BigNumber.min(
+            userBalanceTokenIn || 0,
+            new BigNumber(amountOutBaseAmount).multipliedBy(
+              estimatedPriceInToOut
+            )
+          ).toNumber()
+        : 0
+      : Number(simulationResult?.response?.coin_in.amount || 0);
   const coinOut =
-    Number(simulationResult?.response?.taker_coin_out.amount || 0) +
-    tranchedAmountOut;
+    isValidatingSimulation && lastKnownPrice
+      ? amountInBaseAmount && lastKnownPrice > 0
+        ? // don't estimate higher than the user's balance because the simulate
+          // function won't accept an input higher than the user's balance
+          BigNumber.min(
+            userBalanceTokenIn || 0,
+            new BigNumber(amountInBaseAmount)
+          )
+            .dividedBy(estimatedPriceInToOut || 1)
+            .toNumber()
+        : 0
+      : Number(simulationResult?.response?.taker_coin_out.amount || 0) +
+        tranchedAmountOut;
+
+  const valueIn = useMemo(() => {
+    return (
+      formState?.amountIn ||
+      formatAmount(getDisplayDenomAmount(tokenIn, coinIn) || 0, {
+        maximumSignificantDigits: 5,
+      })
+    );
+  }, [coinIn, formState?.amountIn, tokenIn]);
+  const valueOut = useMemo(() => {
+    return (
+      formState?.amountOut ||
+      formatAmount(getDisplayDenomAmount(tokenOut, coinOut) || 0, {
+        maximumSignificantDigits: 5,
+      })
+    );
+  }, [coinOut, formState?.amountOut, tokenOut]);
+
+  const hasInsufficientFunds = new BigNumber(
+    userBalanceTokenInDisplayAmount || 0
+  ).isLessThan(Number(valueIn) || Number(valueOut) || 0);
 
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
-    <fieldset disabled={!address}>
-      <div className="mt-2 mb-4">
-        <NumericInputRow
-          prefix="Amount"
-          placeholder={
-            isValidatingBuyAmountSimulationResult ? 'finding...' : '0'
-          }
-          value={
-            buyMode ? amountOutDisplayAmount || '' : amountInDisplayAmount || ''
-          }
-          onChange={(value) => {
-            formSetState.setAmount?.(value);
-            setTokenInBalanceFraction(undefined);
-          }}
-          suffix={tokenB?.symbol}
-          format={formatNumericAmount('')}
-        />
-      </div>
-      <RangeListSliderInput
-        className="mb-4"
-        list={userBankBalanceRangePercentages}
-        disabled={
-          !userBalanceTokenInDisplayAmount && isLoadingUserBalanceTokenIn
-        }
-        value={
-          tokenInBalanceFraction ||
-          (buyMode
-            ? // in buy mode estimate the fraction of the token out
-              Number(userBalanceTokenOut)
-              ? Number(amountOutBaseAmount) / Number(userBalanceTokenOut) || 0
-              : 0
-            : // in sell mode estimate the fraction of the token in
-              new BigNumber(
-                // use amount given from text input or range slider input
-                amountInBaseAmount ||
-                  // estimate amount from price
-                  new BigNumber(amountOutBaseAmount || 0).multipliedBy(
-                    lastKnownPrice || currentPrice || 0
-                  )
-              )
-                .dividedBy(userBalanceTokenIn || 1)
-                .toNumber()) ||
-          0
-        }
-        onChange={useCallback(
-          (value: number) => {
-            const numericValue = Math.max(0, Math.min(1, Number(value) || 0));
-            if (buyMode) {
-              formSetState.setAmount?.('');
-              setTokenInBalanceFraction(numericValue);
-            } else {
-              setTokenInBalanceFraction(undefined);
-              const display = new BigNumber(
-                userBalanceTokenInDisplayAmount || 0
-              );
-              const newValue =
-                numericValue < 1
-                  ? // round calculated values
-                    formatAmount(display.multipliedBy(numericValue).toNumber())
-                  : // or pass full value (while truncating fractional zeros)
-                    display.toFixed();
-              if (newValue) {
-                formSetState.setAmount?.(newValue || '');
-              }
+    <fieldset>
+      <Drawer expanded={priceTab === 'Limit'}>
+        <LimitPriceInput
+          className="focusable"
+          tokenA={tokenA}
+          tokenB={tokenB}
+          limitPrice={formState.limitPrice || offsetLimitPrice || ''}
+          onLimitPriceChange={(price) => {
+            // and remove generated market offset price
+            if (limitOption >= 0) {
+              switchLimitOption(-1);
             }
-          },
-          [buyMode, formSetState, userBalanceTokenInDisplayAmount]
-        )}
-      />
-      {showLimitPrice && (
-        <div className="my-md">
-          <NumericInputRow
-            prefix={`Limit ${buyMode ? '<=' : '>='}`}
-            value={formState.limitPrice ?? ''}
-            placeholder="market"
-            onChange={formSetState.setLimitPrice}
-            suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
-            format={formatNumericAmount('')}
-          />
-        </div>
-      )}
-      <div className="my-md">
-        <div className="mb-2">
-          Order type{' '}
-          <a
-            className="button button-primary-outline px-2 py-0"
-            href="https://docs.neutron.org/neutron/modules/dex/messages/#order-types"
-            target="_blank"
-            rel="noreferrer"
-          >
-            ?
-          </a>
-        </div>
-        <SelectInput<AllowedLimitOrderTypeKey>
-          className="flex col m-0 p-0"
-          list={inputOrderTypes}
-          getLabel={(key = defaultExecutionType) => orderTypeTextMap[key]}
-          value={formState.execution}
-          onChange={formSetState.setExecution}
-          floating
+            // set price
+            formSetState.setLimitPrice?.(price);
+          }}
+          limitOptions={buyMode ? buyLimitPriceOptions : sellLimitPriceOptions}
+          limitOption={limitOption}
+          onLimitOptionChange={switchLimitOption}
         />
-        <Drawer expanded={formState.execution === 'GOOD_TIL_TIME'}>
-          <div className="mb-3 flex row gap-3">
+        <div style={{ height: 0 }}>&nbsp;</div>
+      </Drawer>
+      <div className="row">
+        <TokenInputGroup
+          className="focusable flex"
+          header="You pay"
+          subHeader={
+            (!address && 'Wallet not connected') ||
+            (!userBalanceTokenIn &&
+              hasInsufficientFunds &&
+              `Your balance: ${formatAmount(
+                userBalanceTokenInDisplayAmount || 0
+              )}`)
+          }
+          onValueChanged={setAmountIn}
+          token={tokenIn}
+          variant={hasInsufficientFunds && 'error'}
+          inactive={!formState?.amountIn && isValidatingSimulation}
+          value={valueIn}
+          disabledInput={isLoadingUserBalanceTokenIn}
+        ></TokenInputGroup>
+      </div>
+      <div className="row gutter-y-3 flex-centered direction-button-row">
+        <button
+          type="button"
+          disabled={isValidatingSwap}
+          onClick={() => switchModeTab(modeTab === 'Buy' ? 'Sell' : 'Buy')}
+          className="icon-button direction-button"
+        >
+          <FontAwesomeIcon icon={faArrowDown}></FontAwesomeIcon>
+        </button>
+      </div>
+      <div className="row">
+        <TokenInputGroup
+          className="focusable flex"
+          header="You receive"
+          onValueChanged={setAmountOut}
+          token={tokenOut}
+          inactive={!formState?.amountOut && isValidatingSimulation}
+          value={valueOut}
+          maxValue={0}
+          disabledInput={isLoadingUserBalanceTokenIn}
+        ></TokenInputGroup>
+      </div>
+      <div className="limit-expiry-selection my-md">
+        <Drawer expanded={priceTab === 'Limit'}>
+          <div className="row flex-centered">
+            <div className="col my-2 mr-2">Expiry</div>
+            <div className="col ml-auto">
+              <RadioButtonGroupInput<ExpirationOptions>
+                className="order-type-input text-s"
+                values={expirationOptions}
+                value={expiration}
+                onChange={switchExpiration}
+              />
+            </div>
+          </div>
+        </Drawer>
+        <Drawer
+          expanded={
+            formState.execution === 'GOOD_TIL_TIME' && expiration === 'custom'
+          }
+        >
+          <div className="my-3 flex row gap-3">
             <NumericInputRow
-              className="mb-3"
+              className="focusable mb-3"
               prefix="Time"
+              format={formatAmount}
               value={formState.timeAmount ?? ''}
-              onChange={formSetState.setTimeAmount}
+              onChange={(v) => {
+                setExpiration('custom');
+                formSetState.setTimeAmount?.(v);
+              }}
             />
             <SelectInput<TimePeriod>
-              className="flex col m-0 p-0"
+              className="focusable flex col m-0 p-0"
               list={timePeriods.slice()}
               getLabel={(key = 'days') => timePeriodLabels[key]}
               value={formState.timePeriod}
@@ -772,33 +1002,21 @@ function LimitOrder({
       <div>
         <NumericValueRow
           prefix="Est. Avg. Price"
+          loading={isValidatingSimulation}
           value={formatPrice(
             formatMaximumSignificantDecimals(
               simulationResult?.response
                 ? !buyMode
-                  ? coinOut / coinIn || '-'
-                  : coinIn / coinOut || '-'
+                  ? (isValidatingSimulation
+                      ? 1 / estimatedPriceInToOut
+                      : coinOut / coinIn) || '-'
+                  : (isValidatingSimulation
+                      ? estimatedPriceInToOut
+                      : coinIn / coinOut) || '-'
                 : '-'
             )
           )}
           suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
-        />
-      </div>
-      <div>
-        <NumericValueRow
-          prefix={`Total ${buyMode ? 'Cost' : 'Result'}`}
-          loading={isValidatingSimulation}
-          value={
-            tokenIn && simulationResult
-              ? formatAmount(
-                  getDisplayDenomAmount(
-                    tokenIn,
-                    buyMode ? coinIn || '-' : coinOut || '-'
-                  ) || 0
-                )
-              : '-'
-          }
-          suffix={tokenA?.symbol}
         />
       </div>
       {warning ? (
@@ -806,7 +1024,9 @@ function LimitOrder({
         <div className="mt-4">
           <div className="text-error flex text-center">{warning}</div>
         </div>
-      ) : Number(formState.amount) && simulationResult && !coinIn ? (
+      ) : simulationResult &&
+        ((Number(formState.amountIn) && !coinOut) ||
+          (Number(formState.amountOut) && !coinIn)) ? (
         // show a warning if an amount in, but no amount out
         <div className="mt-4">
           <div className="text-warning flex text-center">
@@ -821,39 +1041,35 @@ function LimitOrder({
         </div>
       ) : null}
       <div className="flex row">
-        <button
-          className="limit-order__confirm-button flex button-primary my-lg py-4"
-          onClick={!address ? connectWallet : undefined}
-          disabled={
-            isValidatingSwap ||
-            !simulationResult ||
-            !coinOut ||
-            (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
-          }
-        >
-          {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
-        </button>
-      </div>
-      <NumericValueRow
-        prefix="Available Balance"
-        value={formatAmount(
-          formatMaximumSignificantDecimals(
-            tokenIn
-              ? (userBalanceTokenInDisplayAmount ??
-                  (isLoadingUserBalanceTokenIn && '-')) ||
-                  0
-              : '-',
-            3
-          ),
-          {
-            useGrouping: true,
-          }
+        {address ? (
+          <button
+            className="h4 flex button-primary mt-lg mb-md p-4"
+            disabled={
+              isValidatingSwap ||
+              !simulationResult ||
+              !simulationResultMatchesInput ||
+              (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
+            }
+          >
+            {buyMode ? 'Buy' : 'Sell'}
+          </button>
+        ) : (
+          <button
+            className="h4 flex button-primary mt-lg mb-md p-4"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </button>
         )}
-        suffix={tokenIn?.symbol}
-      />
+      </div>
     </fieldset>
   );
-  return <form onSubmit={onFormSubmit}>{fieldset}</form>;
+  return (
+    <>
+      {cardModeNav}
+      <form onSubmit={onFormSubmit}>{fieldset}</form>
+    </>
+  );
 }
 
 function NumericInputRow({
@@ -870,12 +1086,12 @@ function NumericInputRow({
   readOnly = false,
 }: {
   className?: string;
-  prefix?: string;
+  prefix?: ReactNode;
   value: string;
   placeholder?: string;
   onInput?: (value: string) => void;
   onChange?: (value: string) => void;
-  suffix?: string;
+  suffix?: ReactNode;
   min?: number;
   max?: number;
   format?: (value: number) => string;
@@ -908,14 +1124,19 @@ function NumericInputRow({
 
   return (
     <div
-      className={['numeric-value-input flex row py-3 px-4', className]
+      className={['numeric-value-input flex row', className]
         .filter(Boolean)
         .join(' ')}
+      onClick={() => inputRef.current?.focus()}
+      onKeyDown={() => inputRef.current?.focus()}
+      role="button"
+      tabIndex={0}
     >
       {prefix && (
         <div className="numeric-value-input__prefix mr-3">{prefix}</div>
       )}
       <input
+        ref={inputRef}
         type="number"
         className="numeric-value-input__input flex"
         placeholder={placeholder}
@@ -950,16 +1171,120 @@ function NumericValueRow({
   tooltip?: string;
 }) {
   return (
-    <div className="numeric-value-row flex row py-2">
+    <div className="numeric-value-row flex row py-2 gapx-3">
       <div className="numeric-value-row__prefix">
         {prefix}
         {tooltip && <Tooltip>{tooltip}</Tooltip>}
       </div>
-      <div className="numeric-value-row__loading ml-auto">
-        {loading && <FontAwesomeIcon className="fa-spin" icon={faSpinner} />}
+      <div className="numeric-value-row__right ml-auto text-right">
+        <span className="nowrap">
+          <span className="numeric-value-row__loading">
+            <FontAwesomeIcon
+              className={['fa-spin', !loading && 'invisible']
+                .filter(Boolean)
+                .join(' ')}
+              icon={faSpinner}
+            />
+          </span>
+          <span className="numeric-value-row__value ml-3">{value}</span>
+        </span>
+        {suffix && (
+          <span className="numeric-value-row__suffix ml-3">{suffix}</span>
+        )}
       </div>
-      <div className="numeric-value-row__value ml-3">{value}</div>
-      {suffix && <div className="numeric-value-row__suffix ml-3">{suffix}</div>}
+    </div>
+  );
+}
+
+function LimitPriceInput({
+  className,
+  tokenA,
+  tokenB,
+  limitPrice,
+  onLimitPriceChange,
+  limitOptions,
+  limitOption,
+  onLimitOptionChange,
+}: {
+  className?: string;
+  tokenA: Token;
+  tokenB: Token;
+  limitPrice: string;
+  onLimitPriceChange: (limitPrice: string) => void;
+  limitOptions: Record<LimitPriceOptions, ReactNode>;
+  limitOption: LimitPriceOptions;
+  onLimitOptionChange: (limitOption: LimitPriceOptions) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handleClick = useCallback((event: { target: EventTarget }) => {
+    // only focus input if click comes from an unfocusable element
+    const target = event.target as HTMLElement | null;
+    if (target && target.tabIndex < 0) {
+      inputRef.current?.focus();
+    }
+  }, []);
+  const handleLimitOptionChange = useCallback(
+    (limitOption: LimitPriceOptions) => {
+      // action callback
+      onLimitOptionChange(limitOption);
+      // focus input when "custom" is selected
+      if (limitOption < 0) {
+        inputRef.current?.select();
+      }
+    },
+    [onLimitOptionChange]
+  );
+  return (
+    <div
+      className={[
+        className,
+        'limit-price mb-4',
+        // handle '0' value limit price with an error style
+        limitPrice && !Number(limitPrice) && 'limit-price--error',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onClick={handleClick}
+      onKeyDown={handleClick}
+      role="button"
+      tabIndex={-1}
+    >
+      <div
+        className="flex row flex-centered gap-2"
+        style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+      >
+        <span>When 1</span>
+        <div className="col my-2">
+          <AssetIcon asset={tokenB} height="1.5em" />
+        </div>
+        <div className="col">
+          <AssetSymbol asset={tokenB} />
+        </div>
+        <span>is worth</span>
+      </div>
+      <div className="numeric-value-input flex row">
+        <NumberInput
+          innerRef={inputRef}
+          value={limitPrice}
+          onChange={onLimitPriceChange}
+        />
+        <div className="row flex-centered gap-2 ml-2">
+          <div className="col my-2">
+            <AssetIcon asset={tokenA} height="1.5em" />
+          </div>
+          <div className="col">
+            <AssetSymbol asset={tokenA} />
+          </div>
+        </div>
+      </div>
+      <div className="row">
+        <RadioButtonGroupInput<LimitPriceOptions>
+          className="mt-3 order-type-input text-s"
+          values={limitOptions}
+          value={limitOption}
+          onChange={handleLimitOptionChange}
+        />
+      </div>
     </div>
   );
 }

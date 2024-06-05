@@ -43,10 +43,10 @@ import {
 } from '../../lib/web3/hooks/useTranches';
 import { useWithdrawFilledLimitOrder } from './useWithdrawFilledLimitOrder';
 import { useCancelLimitOrder } from './useCancelLimitOrder';
-import useOnUserDexMsg from '../../lib/web3/hooks/useOnUserDexMsg';
+import { useOnUserDexMsg } from '../../lib/web3/hooks/useOnDexMsg';
 
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 
 import './OrderbookFooter.scss';
 
@@ -64,7 +64,7 @@ export default function OrderbookFooter({
   const [filter, setFilter] = useState<keyof typeof switchValues>('recent');
   return (
     <TableCard<keyof typeof switchValues>
-      title="Orders"
+      title="My Orders"
       className="pb-5 flex"
       scrolling={false}
       switchValues={switchValues}
@@ -96,13 +96,19 @@ function OrderbookFooterTable({
   filterToStatus?: StatusFilter;
 }) {
   const { address } = useWeb3();
-  const { data: txs, refetch } = useTransactionTableData({
-    tokenA,
-    tokenB,
-    action: 'PlaceLimitOrder',
-    account: address,
-    pageSize,
-  });
+  const { data: txs, refetch } = useTransactionTableData(
+    address
+      ? // show user's limit orders when connected
+        {
+          tokenA,
+          tokenB,
+          action: 'PlaceLimitOrder',
+          account: address,
+          pageSize,
+        }
+      : // don't show any data when not connected
+        null
+  );
 
   // subscribe to updates to the user's limit orders
   useOnUserDexMsg<DexPlaceLimitOrderEvent>('PlaceLimitOrder', () => {
@@ -180,6 +186,8 @@ function OrderbookFooterTable({
         userLimitOrderMap: userLimitOrderMapOfPair,
         filterToStatus,
       }}
+      rowDescription="Orders"
+      messageOnEmptyData={!address && 'Connect wallet to see your orders'}
     />
   );
 }
@@ -293,11 +301,13 @@ function PriceColumn({
         <div className="text-muted">
           {isOrdered ? '<' : '>'}
           {formatCurrency(
-            tickIndexToPrice(
+            tickIndexToDisplayPrice(
               new BigNumber(isOrdered ? 1 : -1).multipliedBy(
                 getPlaceLimitOrderEvent(tx)?.attributes.LimitTick ?? NaN
-              )
-            ).toNumber()
+              ),
+              context.tokenA,
+              context.tokenB
+            )?.toNumber() || '-'
           )}
         </div>
       )}
@@ -337,7 +347,13 @@ function getDisplayReservesMain(tx: Tx, context: OrderbookFooterTableContext) {
   return !isOrdered
     ? reservesIn
     : new BigNumber(reservesIn || 0)
-        .dividedBy(tickIndexToPrice(new BigNumber(attributes?.LimitTick || 0)))
+        .dividedBy(
+          tickIndexToDisplayPrice(
+            new BigNumber(attributes?.LimitTick || 0),
+            context.tokenA,
+            context.tokenB
+          ) || 0
+        )
         .toNumber();
 }
 

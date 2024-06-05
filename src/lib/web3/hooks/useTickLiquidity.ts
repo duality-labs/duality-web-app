@@ -12,14 +12,17 @@ import {
 import { Token, TokenID } from '../utils/tokens';
 import { useToken } from './useDenomClients';
 
-type ReserveDataRow = [tickIndex: number, reserves: number];
+export type ReserveDataRow = [tickIndex: number, reserves: number];
 type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 
 // add convenience method to fetch liquidity maps of a pair
 export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   TokenID?,
   TokenID?
-]): StaleWhileRevalidateStreamState<[ReserveDataSet, ReserveDataSet]> {
+]): StaleWhileRevalidateStreamState<
+  [ReserveDataRow, ReserveDataRow],
+  [ReserveDataSet, ReserveDataSet]
+> {
   const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
   const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer

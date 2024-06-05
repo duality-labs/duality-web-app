@@ -1,3 +1,4 @@
+import Long from 'long';
 import { useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { PageRequest } from '@duality-labs/neutronjs/types/codegen/cosmos/base/query/v1beta1/pagination';
@@ -9,7 +10,7 @@ import { useDexRestClientPromise } from '../clients/restClients';
 import { useWeb3 } from '../useWeb3';
 import { useFetchAllPaginatedPages } from './useQueries';
 import { useSwrResponseFromReactQuery } from './useSWR';
-import useOnUserDexMsg from './useOnUserDexMsg';
+import { useOnUserDexMsg } from './useOnDexMsg';
 
 const LimitOrderActions: Array<DexLimitOrderEvent['attributes']['action']> = [
   'PlaceLimitOrder',
@@ -30,12 +31,16 @@ export function useUserLimitOrderTranches() {
       pageParam: Uint8Array | undefined;
     }): Promise<QueryAllUserLimitOrdersResponse> => {
       const client = await restClientPromise;
-      return client.dex.limitOrderTrancheUserAllByAddress({
-        address: address || '',
-        pagination: {
-          key: pageKey || [],
-        } as PageRequest,
-      });
+      return address
+        ? // query chain for user's transactions
+          client.dex.limitOrderTrancheUserAllByAddress({
+            address,
+            pagination: {
+              key: pageKey || [],
+            } as PageRequest,
+          })
+        : // or return no transactions
+          { limit_orders: [], pagination: { total: Long.ZERO } };
     },
     initialPageParam: undefined as Uint8Array | undefined,
     getNextPageParam: (lastPage): Uint8Array | undefined => {

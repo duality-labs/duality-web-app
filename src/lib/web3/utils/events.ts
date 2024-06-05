@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { Event, parseCoins } from '@cosmjs/stargate';
 
-import { tickIndexToPrice } from './ticks';
+import { tickIndexToDisplayPrice } from './ticks';
 import { WalletAddress } from './address';
 import { Token, TokenID, getTokenId } from './tokens';
 
@@ -270,25 +270,65 @@ export interface IBCReceivePacketEvent {
   attributes: IBCPacketEventAttributes;
 }
 
-export function getLastPrice(
+export function getDexActionEvent<T extends DexEvent>(
+  action: T['attributes']['action'],
+  events: ChainEvent[]
+): T | undefined {
+  // get the original request event
+  return events.find(
+    (event): event is T => (event as T).attributes.action === action
+  );
+}
+
+export function getTxEventsEndTickIndexInToOut(events: ChainEvent[]): number {
+  // get the original request event
+  const placeLimitOrderEvent = getDexActionEvent<DexPlaceLimitOrderEvent>(
+    'PlaceLimitOrder',
+    events
+  );
+  // find the request token in
+  const tokenIn = placeLimitOrderEvent?.attributes.TokenIn;
+  // determine is this swap produced a tranche key (it should not)
+  const resultTrancheKey = placeLimitOrderEvent?.attributes.TrancheKey;
+  // get price events
+  const orderPriceEvents = events
+    // match reserve updates
+    .filter<DexTickUpdateReservesEvent | DexTickUpdateTrancheEvent>(
+      (event): event is DexTickUpdateReservesEvent =>
+        // match reserves event
+        !!(event as DexTickUpdateReservesEvent).attributes.TickIndex &&
+        // match TickUpdate for swapped denom (get sale prices)
+        (event as DexTickUpdateReservesEvent).attributes.TokenIn !== tokenIn &&
+        // unmatch result tranch event
+        // note: this should be removable after the chain update to sdk-50
+        (!resultTrancheKey ||
+          (event as DexTickUpdateTrancheEvent).attributes.TrancheKey !==
+            resultTrancheKey)
+    );
+  // return end price
+  const lastEvent = orderPriceEvents.at(-1);
+  return lastEvent ? Number(lastEvent.attributes.TickIndex) : NaN;
+}
+
+export function getTxEventsEndDisplayPrice(
   events: ChainEvent[],
-  { tokenA, tokenB }: { tokenA: Token; tokenB: Token }
-) {
-  const lastTickUpdate = events
-    .reverse()
-    .find((event): event is DexTickUpdateEvent => {
-      return (
-        (event.type === 'message' || event.type === 'TickUpdate') &&
-        event.attributes.action === 'TickUpdate'
-      );
-    });
-  const tickIndex = lastTickUpdate
-    ? new BigNumber(lastTickUpdate.attributes.TickIndex)
-    : undefined;
-  const forward = lastTickUpdate?.attributes.TokenZero === getTokenId(tokenA);
-  const reverse = lastTickUpdate?.attributes.TokenZero === getTokenId(tokenB);
-  return tickIndex && (forward || reverse)
-    ? tickIndexToPrice(forward ? tickIndex : tickIndex.negated())
+  tokenA: Token,
+  tokenB: Token
+): BigNumber | undefined {
+  // get tx tokenIn
+  const tokenIn = getDexActionEvent<DexPlaceLimitOrderEvent>(
+    'PlaceLimitOrder',
+    events
+  )?.attributes.TokenIn;
+  // get tickIndex in AtoB direction
+  const endTickIndexAtoB =
+    tokenIn !== undefined &&
+    new BigNumber(getTxEventsEndTickIndexInToOut(events)).multipliedBy(
+      getTokenId(tokenA) === tokenIn ? 1 : -1
+    );
+  // return display price if found
+  return endTickIndexAtoB !== false && endTickIndexAtoB.isFinite()
+    ? tickIndexToDisplayPrice(endTickIndexAtoB, tokenA, tokenB)
     : undefined;
 }
 

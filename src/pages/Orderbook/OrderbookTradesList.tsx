@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { useEffect, useMemo, useState } from 'react';
 
 import useTransactionTableData, {
@@ -10,16 +11,19 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
 
 import {
-  getLastPrice,
+  DexPlaceLimitOrderEvent,
   getSpentTokenAmount,
+  getTxEventsEndDisplayPrice,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
+import useOnDexMsg from '../../lib/web3/hooks/useOnDexMsg';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 
-import './OrderbookList.scss';
+import './OrderbookTradesList.scss';
 
 // ensure that a certain amount of rows are shown in the card
-const pageSize = 20;
-const tradeListSize = 18;
+const pageSize = 30;
+const tradeListSize = 30;
 
 export default function OrderBookTradesList({
   tokenA,
@@ -28,12 +32,22 @@ export default function OrderBookTradesList({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const { data } = useTransactionTableData({
+  const { data, isLoading, refetch } = useTransactionTableData({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
     pageSize,
   });
+
+  // subscribe to updates of the pair's limit orders
+  const denoms = useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]);
+  useOnDexMsg<DexPlaceLimitOrderEvent>(
+    'PlaceLimitOrder',
+    () => {
+      refetch({ cancelRefetch: false });
+    },
+    denoms ? { TokenZero: denoms[0], TokenOne: denoms[1] } : null
+  );
 
   const [tradeList, setTradeList] = useState<Array<Tx>>([]);
   useEffect(() => {
@@ -72,7 +86,7 @@ export default function OrderBookTradesList({
       : undefined;
 
   return (
-    <div className="flex-centered orderbook-list">
+    <div className="flex flex-centered orderbook-list orderbook-trades-list">
       <table className="orderbook-list__table">
         <colgroup>
           {/* minimize the first column width */}
@@ -86,6 +100,11 @@ export default function OrderBookTradesList({
             <th className="text-medium text-muted text-right">Time</th>
           </tr>
         </thead>
+        <tbody className="orderbook-list__table__gap">
+          <tr>
+            <td className="table-body-spacer"></td>
+          </tr>
+        </tbody>
         <tbody className="orderbook-list__table__txs">
           {tradeList.map((tx, index, txs) => {
             if (index < tradeListSize) {
@@ -104,6 +123,11 @@ export default function OrderBookTradesList({
               return null;
             }
           })}
+          {(!tradeList || !tradeList.length) && (
+            <tr>
+              <td colSpan={3}>{isLoading ? 'Loading...' : 'No Data'}</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
@@ -137,18 +161,18 @@ function OrderbookTradeListRow({
     return previousTx?.tx_result.events.map(mapEventAttributes) || [];
   }, [previousTx]);
 
-  const lastPrice = useMemo(() => {
-    return getLastPrice(events, { tokenA, tokenB });
+  const lastDisplayPrice = useMemo((): BigNumber | undefined => {
+    return getTxEventsEndDisplayPrice(events, tokenA, tokenB);
   }, [events, tokenA, tokenB]);
   const prevPrice = useMemo(() => {
-    return getLastPrice(previousEvents, { tokenA, tokenB });
+    return getTxEventsEndDisplayPrice(previousEvents, tokenA, tokenB);
   }, [previousEvents, tokenA, tokenB]);
 
   const diff = useMemo(() => {
-    return lastPrice !== undefined && prevPrice !== undefined
-      ? lastPrice.minus(prevPrice).toNumber()
+    return lastDisplayPrice !== undefined && prevPrice !== undefined
+      ? lastDisplayPrice.minus(prevPrice).toNumber()
       : 0;
-  }, [lastPrice, prevPrice]);
+  }, [lastDisplayPrice, prevPrice]);
 
   const value = useMemo(() => {
     const amountSpentA = getSpentTokenAmount(events, { matchToken: tokenA });
@@ -176,8 +200,8 @@ function OrderbookTradeListRow({
       )}
       <tr>
         <DiffCell className="text-right" diff={diff}>
-          {lastPrice
-            ? formatAmount(lastPrice?.toNumber(), {
+          {lastDisplayPrice
+            ? formatAmount(lastDisplayPrice?.toNumber(), {
                 minimumFractionDigits: priceDecimalPlaces,
                 maximumFractionDigits: priceDecimalPlaces,
               })

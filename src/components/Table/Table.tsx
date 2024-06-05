@@ -12,6 +12,7 @@ export default function Table<
   getRowKey,
   context,
   rowDescription = 'Data',
+  messageOnEmptyData,
   filtered = false,
 }: {
   className?: string;
@@ -27,6 +28,7 @@ export default function Table<
   getRowKey?: (row: DataRow) => string | number;
   context: Context;
   rowDescription?: string;
+  messageOnEmptyData?: ReactNode;
   filtered?: boolean;
 }) {
   if (columns.length !== headings.length) {
@@ -85,9 +87,11 @@ export default function Table<
           <tr>
             <td colSpan={columns.length}>
               {data ? (
-                <>
-                  No {filtered ? 'Matching' : ''} {rowDescription} Found
-                </>
+                messageOnEmptyData || (
+                  <>
+                    No {filtered ? 'Matching' : ''} {rowDescription} Found
+                  </>
+                )
               ) : (
                 <>Loading...</>
               )}

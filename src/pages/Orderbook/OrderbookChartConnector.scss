@@ -1,0 +1,25 @@
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
+.orderbook-page {
+  .chart-depth-connector {
+    margin-right: -1px;
+    z-index: 2;
+
+    .connector-container {
+      position: relative;
+      overflow: hidden;
+      flex: 1 1 0;
+
+      transition: width ease 0.5s;
+
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    }
+  }
+}
