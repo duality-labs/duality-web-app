@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.0](https://github.com/duality-labs/duality-web-app/compare/v2.10.0...v2.11.0) (2024-06-05)
+
+
+### Features
+
+* improve orderbook order card ([#556](https://github.com/duality-labs/duality-web-app/issues/556)) ([45ad9c9](https://github.com/duality-labs/duality-web-app/commit/45ad9c9ba0ac96c2d51b6d0b743dfc959d05bc21))
+
 ## [2.10.0](https://github.com/duality-labs/duality-web-app/compare/v2.9.0...v2.10.0) (2024-05-16)
 
 
