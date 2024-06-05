@@ -18,7 +18,7 @@ import {
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import {
   IndexerPage,
@@ -114,9 +114,6 @@ export default function OrderBookChart({
     React.SetStateAction<ChartPriceAxisInfo | undefined>
   >;
 }) {
-  const tokenIdA = getTokenId(tokenA);
-  const tokenIdB = getTokenId(tokenB);
-
   const navigate = useNavigate();
 
   // find chart container to fit
@@ -133,6 +130,9 @@ export default function OrderBookChart({
   }, [tokenA, tokenB]);
 
   useEffect(() => {
+    const tokenIdA = getTokenId(tokenA);
+    const tokenIdB = getTokenId(tokenB);
+
     const supportedResolutions: ResolutionString[] = [
       '1S', // second
       '1', // minute
@@ -430,7 +430,32 @@ export default function OrderBookChart({
         });
       };
     }
-  }, [navigate, setLimitPrice, tokenIdA, tokenIdB, tokenPairID]);
+
+    // add specific helper function to convert between display tokens
+    function tickIndexToDisplayPriceAtoB(value: number): number {
+      return (
+        tickIndexToDisplayPrice(
+          new BigNumber(value),
+          tokenA,
+          tokenB
+        )?.toNumber() ?? NaN
+      );
+    }
+
+    // add specific getBarFromTimeSeriesRow for context's tokenA and tokenB
+    function getBarFromTimeSeriesRow([
+      unixTimestamp,
+      [open, high, low, close],
+    ]: TimeSeriesRow) {
+      return {
+        time: unixTimestamp * 1000,
+        open: tickIndexToDisplayPriceAtoB(open),
+        high: tickIndexToDisplayPriceAtoB(high),
+        low: tickIndexToDisplayPriceAtoB(low),
+        close: tickIndexToDisplayPriceAtoB(close),
+      };
+    }
+  }, [navigate, setLimitPrice, tokenA, tokenB, tokenPairID]);
 
   useEffect(() => {
     if (priceIndication && chart && isChartReady(chart)) {
@@ -499,17 +524,4 @@ export default function OrderBookChart({
       onMouseLeave={setUnfocused}
     ></div>
   );
-}
-
-function getBarFromTimeSeriesRow([
-  unixTimestamp,
-  [open, high, low, close],
-]: TimeSeriesRow) {
-  return {
-    time: unixTimestamp * 1000,
-    open: tickIndexToPrice(new BigNumber(open)).toNumber(),
-    high: tickIndexToPrice(new BigNumber(high)).toNumber(),
-    low: tickIndexToPrice(new BigNumber(low)).toNumber(),
-    close: tickIndexToPrice(new BigNumber(close)).toNumber(),
-  };
 }

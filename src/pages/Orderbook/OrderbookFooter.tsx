@@ -46,7 +46,7 @@ import { useCancelLimitOrder } from './useCancelLimitOrder';
 import { useOnUserDexMsg } from '../../lib/web3/hooks/useOnDexMsg';
 
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 
 import './OrderbookFooter.scss';
 
@@ -301,11 +301,13 @@ function PriceColumn({
         <div className="text-muted">
           {isOrdered ? '<' : '>'}
           {formatCurrency(
-            tickIndexToPrice(
+            tickIndexToDisplayPrice(
               new BigNumber(isOrdered ? 1 : -1).multipliedBy(
                 getPlaceLimitOrderEvent(tx)?.attributes.LimitTick ?? NaN
-              )
-            ).toNumber()
+              ),
+              context.tokenA,
+              context.tokenB
+            )?.toNumber() || '-'
           )}
         </div>
       )}
@@ -345,7 +347,13 @@ function getDisplayReservesMain(tx: Tx, context: OrderbookFooterTableContext) {
   return !isOrdered
     ? reservesIn
     : new BigNumber(reservesIn || 0)
-        .dividedBy(tickIndexToPrice(new BigNumber(attributes?.LimitTick || 0)))
+        .dividedBy(
+          tickIndexToDisplayPrice(
+            new BigNumber(attributes?.LimitTick || 0),
+            context.tokenA,
+            context.tokenB
+          ) || 0
+        )
         .toNumber();
 }
 
