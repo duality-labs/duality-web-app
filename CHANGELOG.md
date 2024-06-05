@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/duality-labs/duality-web-app/compare/v2.11.0...v2.11.1) (2024-06-05)
+
+
+### Fixes
+
+* limit market order should set limit to current market price ([#561](https://github.com/duality-labs/duality-web-app/issues/561)) ([72b2d46](https://github.com/duality-labs/duality-web-app/commit/72b2d463ae2c1ec4380e841b08535b6ea29314e4))
+
 ## [2.11.0](https://github.com/duality-labs/duality-web-app/compare/v2.10.0...v2.11.0) (2024-06-05)
 
 
