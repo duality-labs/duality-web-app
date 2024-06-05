@@ -25,7 +25,7 @@ import {
   IndexerStreamAccumulateSingleDataSet,
 } from '../../lib/web3/hooks/useIndexer';
 
-const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
+const { REACT_APP__INDEXER_API = '', REACT_APP__LOG_LEVEL } = import.meta.env;
 
 const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
   custom_css_url: '/tradingview.css',
@@ -33,7 +33,7 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
     'paneProperties.backgroundType': 'solid',
     'paneProperties.background': '#101828', // var(--default)
   },
-  debug: !PROD,
+  debug: REACT_APP__LOG_LEVEL === 'Verbose',
   autosize: true,
   container: '',
   locale: 'en',
