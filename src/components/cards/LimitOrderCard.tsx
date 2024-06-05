@@ -609,20 +609,32 @@ function LimitOrder({
         );
       };
 
-      // find limit price from custom limit price or limit price offset
-      // calculation, and do not pass 0: allow NaN to raise errors
-      const limitPrice = Number(
-        formState.limitPrice || (limitOption > 0 ? offsetLimitPrice : NaN)
-      );
-
-      const tickIndexLimitInToOut = limitPrice
-        ? displayPriceToTickIndex(new BigNumber(limitPrice), tokenIn, tokenOut)
-            ?.multipliedBy(buyMode ? 1 : -1)
-            ?.toNumber()
-        : getMarketLimitIndex();
+      // set tick index limit depending on price mode: Swap/Limit
+      const tickIndexLimitInToOut =
+        priceTab === 'Limit'
+          ? // use limit price
+            displayPriceToTickIndex(
+              new BigNumber(
+                // find limit price from custom limit price or current+offset
+                // calculation, and do not pass 0: allow NaN to raise errors
+                formState.limitPrice ||
+                  (limitOption > 0 ? offsetLimitPrice : currentPriceAtoB) ||
+                  NaN
+              ),
+              tokenIn,
+              tokenOut
+            )
+              ?.multipliedBy(buyMode ? 1 : -1)
+              ?.toNumber()
+          : // use custom swap market limit calculation
+            getMarketLimitIndex();
 
       // if the msg is defined and the limit is ok, then proceed
-      if (simulatedMsgPlaceLimitOrder && tickIndexLimitInToOut !== undefined) {
+      if (
+        simulatedMsgPlaceLimitOrder &&
+        tickIndexLimitInToOut !== undefined &&
+        Number.isFinite(tickIndexLimitInToOut)
+      ) {
         const msgPlaceLimitOrder = {
           ...simulatedMsgPlaceLimitOrder,
           tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
@@ -656,6 +668,8 @@ function LimitOrder({
       formState.timePeriod,
       limitOption,
       offsetLimitPrice,
+      currentPriceAtoB,
+      priceTab,
       tokenIn,
       tokenOut,
       buyMode,
