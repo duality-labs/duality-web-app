@@ -330,13 +330,8 @@ export default function OrderBookChart({
             {
               disableSSE: true,
               ignoreInitialData404s: true,
-              getDataUpdateKey: (dataRow) => dataRow.block_tmstmp,
-              getDataUpdateValue: (dataRow) => [
-                Number(dataRow.open),
-                Number(dataRow.high),
-                Number(dataRow.low),
-                Number(dataRow.close),
-              ],
+              getDataUpdateKey,
+              getDataUpdateValue,
             }
           );
           streams.set(fetchID, stream);
@@ -373,13 +368,8 @@ export default function OrderBookChart({
                   .sort((a, b) => a.block_tmstmp - b.block_tmstmp);
                 for (const row of chronologicalUpdates) {
                   const dataUpdate: TimeSeriesRow = [
-                    row.block_tmstmp,
-                    [
-                      Number(row.open),
-                      Number(row.high),
-                      Number(row.low),
-                      Number(row.close),
-                    ],
+                    getDataUpdateKey(row),
+                    getDataUpdateValue(row),
                   ];
                   const bar = getBarFromTimeSeriesRow(dataUpdate);
                   // add only bars that are new or updates to last timestamp
@@ -401,13 +391,8 @@ export default function OrderBookChart({
             },
             {
               ignoreInitialData404s: !!lastBars.get(fetchID),
-              getDataUpdateKey: (dataRow) => dataRow.block_tmstmp,
-              getDataUpdateValue: (dataRow) => [
-                Number(dataRow.open),
-                Number(dataRow.high),
-                Number(dataRow.low),
-                Number(dataRow.close),
-              ],
+              getDataUpdateKey,
+              getDataUpdateValue,
             }
           );
           streams.set(subscriberUID, stream);
@@ -568,4 +553,17 @@ export default function OrderBookChart({
       onMouseLeave={setUnfocused}
     ></div>
   );
+}
+
+// common transformation functions
+function getDataUpdateKey(dataRow: TimeSeriesPriceDataRow) {
+  return dataRow.block_tmstmp;
+}
+function getDataUpdateValue(dataRow: TimeSeriesPriceDataRow) {
+  return [
+    Number(dataRow.open),
+    Number(dataRow.high),
+    Number(dataRow.low),
+    Number(dataRow.close),
+  ];
 }
