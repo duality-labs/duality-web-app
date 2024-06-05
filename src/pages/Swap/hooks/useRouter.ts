@@ -19,6 +19,7 @@ import {
   DexPlaceLimitOrderEvent,
   mapEventAttributes,
 } from '../../../lib/web3/utils/events';
+import logger from '../../../lib/utils/logger';
 
 type SimulateResponse = Awaited<ReturnType<TxExtension['tx']['simulate']>>;
 type ExtendedSimulateResponse = Partial<
@@ -81,6 +82,7 @@ export function useSimulatedLimitOrderResult(
       if (!Number(msgPlaceLimitOrder.amount_in)) return {};
       try {
         const placeOrder = async (msgPlaceLimitOrder: MsgPlaceLimitOrder) => {
+          logger?.debug('Client simulateMsg from', address, msgPlaceLimitOrder);
           return txSimulationClient.simulate(
             address,
             [

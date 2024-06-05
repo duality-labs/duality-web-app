@@ -23,6 +23,7 @@ import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { formatAmount } from '../../lib/utils/number';
 import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
+import logger from '../../lib/utils/logger';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -255,38 +256,34 @@ export function useDeposit([denomA, denomB]: [
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Adding Liquidity...' });
 
+        const msg = {
+          creator: web3Address,
+          token_a: denomA,
+          token_b: denomB,
+          receiver: web3Address,
+          // note: tick indexes must be in the form of "A to B"
+          // as that is what is noted by the key sent to the API
+          // but that seems to be we have defined as "B to A"
+          tick_indexes_a_to_b: filteredUserTicks.map((tick) =>
+            Long.fromNumber(tick.tickIndexBToA)
+          ),
+          fees: filteredUserTicks.map((tick) => Long.fromNumber(tick.fee)),
+          amounts_a: filteredUserTicks.map((tick) => tick.reserveA.toFixed(0)),
+          amounts_b: filteredUserTicks.map((tick) => tick.reserveB.toFixed(0)),
+          // todo: allow user to specify autoswap behavior
+          options: filteredUserTicks.map(() => ({
+            disable_autoswap: false,
+          })),
+        };
+
+        logger?.info('Client msg from', web3.address, msg);
+
         // wrap transaction logic
         try {
           const client = await getDexSigningClient(web3.wallet);
           const res: DeliverTxResponse = await client.signAndBroadcast(
             web3.address,
-            [
-              neutron.dex.MessageComposer.withTypeUrl.deposit({
-                creator: web3Address,
-                token_a: denomA,
-                token_b: denomB,
-                receiver: web3Address,
-                // note: tick indexes must be in the form of "A to B"
-                // as that is what is noted by the key sent to the API
-                // but that seems to be we have defined as "B to A"
-                tick_indexes_a_to_b: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.tickIndexBToA)
-                ),
-                fees: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.fee)
-                ),
-                amounts_a: filteredUserTicks.map((tick) =>
-                  tick.reserveA.toFixed(0)
-                ),
-                amounts_b: filteredUserTicks.map((tick) =>
-                  tick.reserveB.toFixed(0)
-                ),
-                // todo: allow user to specify autoswap behavior
-                options: filteredUserTicks.map(() => ({
-                  disable_autoswap: false,
-                })),
-              }),
-            ],
+            [neutron.dex.MessageComposer.withTypeUrl.deposit(msg)],
             {
               gas: gasEstimate.toFixed(0),
               amount: [],

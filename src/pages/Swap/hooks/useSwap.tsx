@@ -16,6 +16,7 @@ import {
   MsgPlaceLimitOrderResponse,
   MsgPlaceLimitOrder,
 } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
+import logger from '../../../lib/utils/logger';
 
 async function sendSwap(
   {
@@ -138,6 +139,7 @@ export function useSwap(denoms: string[]): [
       if (!tokenInToken) return onError('Token in was not found');
       if (!tokenOutToken) return onError('Token out was not found');
 
+      logger?.info('Client msg from', address, request);
       await createTransactionToasts(
         () => {
           return sendSwap({ wallet, address }, request, gasEstimate);

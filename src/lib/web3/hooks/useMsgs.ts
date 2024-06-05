@@ -13,6 +13,7 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../../components/Notifications/common';
+import logger from '../../utils/logger';
 
 const defaultGasMultiplier = 1.5;
 
@@ -61,6 +62,8 @@ export function useMsgs({
 
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, ...opts.toasts?.loading });
+
+        logger?.info('Client msgs', msgs);
 
         // wrap transaction logic
         try {
