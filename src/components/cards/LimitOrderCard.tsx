@@ -62,12 +62,13 @@ import {
   immediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
 import {
-  DexTickUpdateEvent,
   getTxEventsEndDisplayPrice,
+  getTxEventsEndTickIndexInToOut,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import {
   displayPriceToTickIndex,
+  priceToTickIndex,
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
@@ -588,34 +589,24 @@ function LimitOrder({
 
       // define function to get the current market limit index with a tolerance
       const getMarketLimitIndex = () => {
-        // calculate last price out from result
-        const lastPriceEvent = simulationResult?.result?.events.findLast(
-          (event) => event.type === 'TickUpdate'
-        );
-
-        // if market limit simulation made no update to the liquidity then skip
-        if (!lastPriceEvent) {
-          return;
-        }
-
-        const denomIn = getTokenId(tokenIn);
-
-        // calculate tolerance from user slippage settings
+        // calculate tolerance (in ticks) from user slippage settings
         // set tiny minimum of tolerance as the frontend calculations
         // don't always exactly align with the backend calculations
-        const tolerance = Math.max(1e-12, Number(formState.slippage) || 0);
-        const toleranceFactor = 1 + tolerance;
-        // calculate last price out from matching event results
-        const lastPrice =
-          mapEventAttributes<DexTickUpdateEvent>(lastPriceEvent)?.attributes;
-        const direction =
-          lastPrice.TokenIn === denomIn
-            ? lastPrice.TokenIn === lastPrice.TokenZero
-            : lastPrice.TokenIn === lastPrice.TokenOne;
+        const slippage = Number(formState.slippage) / 100 || 0;
+        const toleranceTicks = priceToTickIndex(new BigNumber(1 + slippage))
+          .decimalPlaces(0, BigNumber.ROUND_UP)
+          .toNumber();
 
-        return direction
-          ? Math.floor(Number(lastPrice.TickIndex) / toleranceFactor)
-          : Math.floor(Number(lastPrice.TickIndex) * toleranceFactor);
+        // calculate last price out from matching event results
+        const events = simulationResult?.result?.events.map(mapEventAttributes);
+        const lastTickIndex = events && getTxEventsEndTickIndexInToOut(events);
+
+        // return the limit with tolerance
+        return (
+          lastTickIndex &&
+          // apply tolerance in the in->out direction to the result tick index
+          lastTickIndex + toleranceTicks
+        );
       };
 
       // find limit price from custom limit price or limit price offset

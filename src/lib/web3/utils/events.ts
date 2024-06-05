@@ -270,7 +270,7 @@ export interface IBCReceivePacketEvent {
   attributes: IBCPacketEventAttributes;
 }
 
-function getDexActionEvent<T extends DexEvent>(
+export function getDexActionEvent<T extends DexEvent>(
   action: T['attributes']['action'],
   events: ChainEvent[]
 ): T | undefined {
@@ -280,7 +280,7 @@ function getDexActionEvent<T extends DexEvent>(
   );
 }
 
-function getTxEventsEndTickIndexInToOut(events: ChainEvent[]): number {
+export function getTxEventsEndTickIndexInToOut(events: ChainEvent[]): number {
   // get the original request event
   const placeLimitOrderEvent = getDexActionEvent<DexPlaceLimitOrderEvent>(
     'PlaceLimitOrder',
