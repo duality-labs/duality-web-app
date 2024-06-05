@@ -592,7 +592,7 @@ function LimitOrder({
         // calculate tolerance (in ticks) from user slippage settings
         // set tiny minimum of tolerance as the frontend calculations
         // don't always exactly align with the backend calculations
-        const slippage = Number(formState.slippage) / 100 || 0;
+        const slippage = Number(formState.slippagePercent) / 100 || 0;
         const toleranceTicks = priceToTickIndex(new BigNumber(1 + slippage))
           .decimalPlaces(0, BigNumber.ROUND_UP)
           .toNumber();
@@ -650,7 +650,7 @@ function LimitOrder({
     },
     [
       formState.limitPrice,
-      formState.slippage,
+      formState.slippagePercent,
       formState.execution,
       formState.timeAmount,
       formState.timePeriod,
@@ -763,7 +763,7 @@ function LimitOrder({
       if (priceTab === 'Limit' && limitOption !== 0) {
         setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
       }
-      // set market price slippage result: based on trade simulation end price
+      // set market price "slippage" result: based on trade simulation end price
       else if (
         priceTab === 'Swap' &&
         tokenA &&

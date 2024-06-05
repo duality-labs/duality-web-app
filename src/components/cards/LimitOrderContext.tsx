@@ -18,7 +18,7 @@ interface FormState {
   timeAmount: string;
   timePeriod: TimePeriod;
   execution: AllowedLimitOrderTypeKey;
-  slippage: string;
+  slippagePercent: string;
 }
 interface FormSetState {
   setAmountInOut: Dispatch<SetStateAction<[string, string]>>;
@@ -26,7 +26,7 @@ interface FormSetState {
   setTimeAmount: Dispatch<SetStateAction<FormState['timeAmount']>>;
   setTimePeriod: Dispatch<SetStateAction<FormState['timePeriod']>>;
   setExecution: Dispatch<SetStateAction<FormState['execution']>>;
-  setSlippage: Dispatch<SetStateAction<FormState['slippage']>>;
+  setSlippagePercent: Dispatch<SetStateAction<FormState['slippagePercent']>>;
 }
 
 export const LimitOrderFormContext = createContext<Partial<FormState>>({});
@@ -46,7 +46,7 @@ export function LimitOrderContextProvider({
   const [timeAmount, setTimeAmount] = useState('1');
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('hours');
   const [execution, setExecution] = useState(defaultExecutionType);
-  const [slippage, setSlippage] = useState('');
+  const [slippagePercent, setSlippagePercent] = useState('0.5');
 
   const state = useMemo(() => {
     const [amountIn, amountOut] = amountInOut;
@@ -57,9 +57,16 @@ export function LimitOrderContextProvider({
       timeAmount,
       timePeriod,
       execution,
-      slippage,
+      slippagePercent,
     };
-  }, [amountInOut, limitPrice, timeAmount, timePeriod, execution, slippage]);
+  }, [
+    amountInOut,
+    limitPrice,
+    timeAmount,
+    timePeriod,
+    execution,
+    slippagePercent,
+  ]);
 
   const setState = useMemo(() => {
     return {
@@ -68,7 +75,7 @@ export function LimitOrderContextProvider({
       setTimeAmount,
       setTimePeriod,
       setExecution,
-      setSlippage,
+      setSlippagePercent,
     };
   }, [
     setAmountInOut,
@@ -76,7 +83,7 @@ export function LimitOrderContextProvider({
     setTimeAmount,
     setTimePeriod,
     setExecution,
-    setSlippage,
+    setSlippagePercent,
   ]);
 
   return (
