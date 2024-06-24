@@ -21,8 +21,10 @@ import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import {
-  IndexerPage,
+  BaseTimeSeriesSSERow,
   IndexerStreamAccumulateSingleDataSet,
+  TimeSeriesPage,
+  fetchMostRecentDataRowFromTimeseries,
 } from '../../lib/web3/hooks/useIndexer';
 
 const { REACT_APP__INDEXER_API = '', REACT_APP__LOG_LEVEL } = import.meta.env;
@@ -62,19 +64,23 @@ interface RequestQuery {
 
 interface PaginationRequestQuery extends RequestQuery {
   // replicated CosmosSDK keys
-  'pagination.key'?: string; // base64 string key
-  'pagination.offset'?: string; // integer
-  'pagination.limit'?: string; // integer
-  'pagination.count_total'?: 'true'; // boolean
-  // custom
-  'pagination.before'?: string; // unix timestamp
-  'pagination.after'?: string; // unix timestamp
+  offset?: string; // integer
+  limit?: string; // integer
 }
 
 interface BlockRangeRequestQuery extends RequestQuery {
   // custom query parameters
-  'block_range.from_height'?: string; // integer
-  'block_range.to_height'?: string; // integer
+  from_block_hght?: string; // integer
+  to_block_hght?: string; // integer
+  from_block_tmstmp?: string; // integer
+  to_block_tmstmp?: string; // integer
+}
+
+interface TimeSeriesPriceDataRow extends BaseTimeSeriesSSERow {
+  high: string;
+  low: string;
+  open: string;
+  close: string;
 }
 
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
@@ -143,7 +149,7 @@ export default function OrderBookChart({
     ] as ResolutionString[];
 
     const resolutionMap: {
-      [tradingViewResolution: string]: TimeSeriesResolution;
+      [tradingViewResolution: ResolutionString[number]]: TimeSeriesResolution;
     } = {
       '1S': 'second', // second
       '1': 'minute', // minute
@@ -158,10 +164,12 @@ export default function OrderBookChart({
     type SubscriberUUID = string;
     const firstBars: Map<FetchID, Bar> = new Map();
     const lastBars: Map<FetchID, Bar> = new Map();
-    const knownHeights: Map<FetchID, number> = new Map();
     const streams: Map<
       SubscriberUUID,
-      IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>
+      IndexerStreamAccumulateSingleDataSet<
+        TimeSeriesPage<TimeSeriesPriceDataRow>,
+        TimeSeriesPriceDataRow
+      >
     > = new Map();
 
     const getFetchID = (
@@ -177,13 +185,12 @@ export default function OrderBookChart({
       searchParams?: PaginationRequestQuery & BlockRangeRequestQuery
     ) => {
       const url = new URL(
-        `${REACT_APP__INDEXER_API}/timeseries/price/${encodeURIComponent(
-          symbolB
-        )}/${encodeURIComponent(symbolA)}${
-          resolutionMap[`${resolution}`]
-            ? `/${resolutionMap[`${resolution}`]}`
-            : ''
-        }`
+        `v1/timeseries/price?${[
+          `token_a=${encodeURIComponent(symbolA)}`,
+          `token_b=${encodeURIComponent(symbolB)}`,
+          `resolution=${resolutionMap[`${resolution}`]}`,
+        ].join('&')}`,
+        `${REACT_APP__INDEXER_API}`
       );
 
       // add search params into constructed URL
@@ -258,74 +265,75 @@ export default function OrderBookChart({
           // construct fetch ID that corresponds to a unique known fetch height
           const fetchID = getFetchID(symbolInfo, resolution);
           const url = getFetchURL(tokenIdA, tokenIdB, resolution, {
-            'pagination.before': periodParams.to?.toFixed(0),
-            'pagination.after': periodParams.from?.toFixed(0),
+            from_block_tmstmp: periodParams.from?.toFixed(0),
+            to_block_tmstmp: periodParams.to?.toFixed(0),
+            limit: '100',
           });
 
-          const stream =
-            new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
-              url,
-              {
-                onCompleted: async (data, height) => {
-                  stream.unsubscribe();
-                  if (height > (knownHeights.get(fetchID) ?? 0)) {
-                    knownHeights.set(fetchID, height);
-                  }
-                  // note: the data needs to be in chronological order
-                  // and our API delivers results in reverse-chronological order
-                  const bars: Bar[] = Array.from(data)
-                    .reverse()
-                    .map(getBarFromTimeSeriesRow);
-                  // record earliest bar info of this fetch
-                  const firstBar = bars.at(0);
-                  if (
-                    firstBar &&
-                    firstBar.time > (firstBars.get(fetchID)?.time ?? 0)
-                  ) {
-                    firstBars.set(fetchID, firstBar);
-                  }
-                  // record most recent bar info of this fetch
-                  const lastBar = bars.at(-1);
-                  if (
-                    lastBar &&
-                    lastBar.time > (lastBars.get(fetchID)?.time ?? 0)
-                  ) {
-                    lastBars.set(fetchID, lastBar);
-                  }
-                  // if no bars were received: determine if there are other bars
-                  // that can be fetched in a subsequent query
-                  if (!bars.length) {
-                    const previousDataURL = getFetchURL(
-                      tokenIdA,
-                      tokenIdB,
-                      resolution,
-                      {
-                        'pagination.before': periodParams.from?.toFixed(0),
-                        'pagination.limit': '1',
-                      }
-                    );
-                    const previousData: IndexerPage<TimeSeriesRow> =
-                      await fetch(previousDataURL).then((response) =>
-                        response.json()
-                      );
-                    const previousUnixTimestamp = previousData.data[0]?.[0];
-                    // inform the chart that there is more data starting at this
-                    // next timestamp (or not): it will adjust the next query
-                    return onHistoryCallback(bars, {
-                      noData: !previousUnixTimestamp,
-                      nextTime: previousUnixTimestamp || null,
-                    });
-                  }
-                  onHistoryCallback(bars);
-                },
-                onError: (e) => {
-                  onErrorCallback(
-                    (e as Error)?.message || 'Unknown error occurred'
+          const stream = new IndexerStreamAccumulateSingleDataSet<
+            TimeSeriesPage<TimeSeriesPriceDataRow>,
+            TimeSeriesPriceDataRow,
+            Map<TimeSeriesRow[0], TimeSeriesRow[1]>
+          >(
+            url,
+            {
+              onCompleted: async (data) => {
+                stream.unsubscribe();
+                // the API is not strictly ordered: it must be re-sorted
+                const sortedData = Array.from(data).sort((a, b) => a[0] - b[0]);
+                const bars: Bar[] = sortedData.map(getBarFromTimeSeriesRow);
+                // record earliest bar info of this fetch
+                const firstBar = bars.at(0);
+                if (
+                  firstBar &&
+                  firstBar.time > (firstBars.get(fetchID)?.time ?? 0)
+                ) {
+                  firstBars.set(fetchID, firstBar);
+                }
+                // record most recent bar info of this fetch
+                const lastBar = bars.at(-1);
+                if (
+                  lastBar &&
+                  lastBar.time > (lastBars.get(fetchID)?.time ?? 0)
+                ) {
+                  lastBars.set(fetchID, lastBar);
+                }
+                // if no bars were received: determine if there are other bars
+                // that can be fetched in a subsequent query
+                if (!bars.length) {
+                  // find the most recent timestamp before a certain timestamp
+                  const latestData = await fetchMostRecentDataRowFromTimeseries(
+                    getFetchURL(tokenIdA, tokenIdB, resolution, {
+                      to_block_tmstmp: periodParams.from?.toFixed(0),
+                    })
                   );
-                },
+                  const previousUnixTimestamp = latestData?.block_tmstmp;
+                  // inform the chart that there is more data starting at this
+                  // next timestamp (or not): it will adjust the next query
+                  return onHistoryCallback(bars, {
+                    noData: !previousUnixTimestamp,
+                    nextTime: previousUnixTimestamp || null,
+                  });
+                }
+                onHistoryCallback(bars, {
+                  // assume there is more data,
+                  // on next query: if no data is found it will be handled there
+                  noData: false,
+                });
               },
-              { disableSSE: true }
-            );
+              onError: (e) => {
+                onErrorCallback(
+                  (e as Error)?.message || 'Unknown error occurred'
+                );
+              },
+            },
+            {
+              disableSSE: true,
+              ignoreInitialData404s: true,
+              getDataUpdateKey,
+              getDataUpdateValue,
+            }
+          );
           streams.set(fetchID, stream);
         },
         subscribeBars: (
@@ -336,19 +344,34 @@ export default function OrderBookChart({
           // onResetCacheNeededCallback
         ) => {
           const fetchID = getFetchID(symbolInfo, resolution);
-          const url = getFetchURL(tokenIdA, tokenIdB, resolution, {
-            'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
+          const lastBarTime = lastBars.get(fetchID)?.time;
+          // sebscribe in seconds because API does not support other resolutions
+          const url = getFetchURL(tokenIdA, tokenIdB, supportedResolutions[0], {
+            // set start limit in Unix seconds
+            from_block_tmstmp: Math.floor(
+              (lastBarTime || Date.now()) / 1000
+            ).toFixed(0),
           });
 
-          const stream =
-            new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
+          const stream = new IndexerStreamAccumulateSingleDataSet<
+            TimeSeriesPage<TimeSeriesPriceDataRow>,
+            TimeSeriesPriceDataRow,
+            Map<TimeSeriesRow[0], TimeSeriesRow[1]>
+          >(
+            url,
+            {
               onUpdate: (dataUpdates) => {
                 let lastBar = lastBars.get(fetchID);
-                // note: the data needs to be in chronological order
-                // and our API delivers results in reverse-chronological order
-                const chronologicalUpdates = dataUpdates.slice().reverse();
+                // note: the data should be sorted but can be almost-sorted
+                const chronologicalUpdates = dataUpdates
+                  .slice()
+                  .sort((a, b) => a.block_tmstmp - b.block_tmstmp);
                 for (const row of chronologicalUpdates) {
-                  const bar = getBarFromTimeSeriesRow(row);
+                  const dataUpdate: TimeSeriesRow = [
+                    getDataUpdateKey(row),
+                    getDataUpdateValue(row),
+                  ];
+                  const bar = getBarFromTimeSeriesRow(dataUpdate);
                   // add only bars that are new or updates to last timestamp
                   if (!lastBar || bar.time >= lastBar.time) {
                     onRealtimeCallback(bar);
@@ -365,7 +388,13 @@ export default function OrderBookChart({
                 // eslint-disable-next-line no-console
                 console.error('SSE error', e);
               },
-            });
+            },
+            {
+              ignoreInitialData404s: !!lastBars.get(fetchID),
+              getDataUpdateKey,
+              getDataUpdateValue,
+            }
+          );
           streams.set(subscriberUID, stream);
         },
         unsubscribeBars: (subscriberUID) => {
@@ -524,4 +553,17 @@ export default function OrderBookChart({
       onMouseLeave={setUnfocused}
     ></div>
   );
+}
+
+// common transformation functions
+function getDataUpdateKey(dataRow: TimeSeriesPriceDataRow) {
+  return dataRow.block_tmstmp;
+}
+function getDataUpdateValue(dataRow: TimeSeriesPriceDataRow) {
+  return [
+    Number(dataRow.open),
+    Number(dataRow.high),
+    Number(dataRow.low),
+    Number(dataRow.close),
+  ];
 }

@@ -68,6 +68,7 @@ jobs:
         run: npm run build -- --mode testnet && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+          REACT_APP__INDEXER_API_KEY: ${{ secrets.REACT_APP__INDEXER_API_KEY }}
 
       - name: Deploy testnet preview to Netlify
         id: netlify_deploy_testnet_preview
@@ -92,10 +93,10 @@ jobs:
         name: Create GitHub Preview deployment
         id: deployment
         with:
-            token: '${{ secrets.GIT_PAT }}'
-            environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
-            environment: Preview
-            initial-status: success
+          token: '${{ secrets.GIT_PAT }}'
+          environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
+          environment: Preview
+          initial-status: success
       - name: Clear build folder
         run: rm -rf build
 
@@ -105,6 +106,7 @@ jobs:
         run: npm run build -- --mode beta && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+          REACT_APP__INDEXER_API_KEY: ${{ secrets.REACT_APP__INDEXER_API_KEY }}
 
       - name: Deploy beta preview to Netlify
         id: netlify_deploy_beta_preview
@@ -141,4 +143,3 @@ jobs:
           echo "Preview URL: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_PREVIEW_URL }}" >> netlify.txt
           echo "Logs: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
           gh pr comment ${{ github.event.pull_request.number }} --body-file netlify.txt || true
-

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import BigNumber from 'bignumber.js';
 
@@ -6,31 +6,101 @@ import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 
 import {
+  BaseLiquidityDataRow,
+  BaseLiquiditySSEPage,
+  LiquidityPage,
   StaleWhileRevalidateStreamState,
   useIndexerStreamOfDualDataSet,
 } from './useIndexer';
 import { Token, TokenID } from '../utils/tokens';
 import { useToken } from './useDenomClients';
 
+interface DataRow extends BaseLiquiditySSEPage {
+  block_tmstmp: number;
+  tick_index: number;
+  reserves: string;
+  token_in: string;
+}
 export type ReserveDataRow = [tickIndex: number, reserves: number];
 type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 
+function removeZeroLiquidityValues(row: DataRow) {
+  return !Number(row.reserves);
+}
+const tokenPairMapLiquidityOpts = {
+  // remove entries of value 0 from the accumulated map, they are not used
+  removeEntryMatch: removeZeroLiquidityValues,
+  getDataUpdateKey: (dataRow: DataRow) => -dataRow.tick_index,
+  getDataUpdateValue: (dataRow: DataRow) => Number(dataRow.reserves),
+};
 // add convenience method to fetch liquidity maps of a pair
 export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   TokenID?,
   TokenID?
 ]): StaleWhileRevalidateStreamState<
-  [ReserveDataRow, ReserveDataRow],
+  [DataRow, DataRow],
   [ReserveDataSet, ReserveDataSet]
 > {
   const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
   const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer
-  return useIndexerStreamOfDualDataSet<ReserveDataRow>(
-    encodedA && encodedB && `/liquidity/pair/${encodedA}/${encodedB}`,
+  return useIndexerStreamOfDualDataSet<
+    LiquidityPage<BaseLiquidityDataRow>,
+    DataRow,
+    ReserveDataSet
+  >(
+    encodedA &&
+      encodedB &&
+      `v1/liquidity/pair?token_a=${encodedA}&token_b=${encodedB}`,
     {
-      // remove entries of value 0 from the accumulated map, they are not used
-      mapEntryRemovalValue: 0,
+      ...tokenPairMapLiquidityOpts,
+      // translate page data into SSE data for consistent processing
+      getDataRowsFromResponse: useCallback(
+        (dataPage: LiquidityPage<BaseLiquidityDataRow>): DataRow[] => {
+          return tokenIdA && tokenIdB
+            ? [
+                ...(dataPage.data.reserves_b_a || []).map((row) => {
+                  return {
+                    // set a non-zero (existing) timestamp to be overwritten
+                    block_tmstmp: 1,
+                    tick_index: row.tick_index,
+                    reserves: row.reserves,
+                    token_in: tokenIdA,
+                  };
+                }),
+                ...(dataPage.data.reserves_a_b || []).map((row) => {
+                  return {
+                    // set a non-zero (existing) timestamp to be overwritten
+                    block_tmstmp: 1,
+                    tick_index: row.tick_index,
+                    reserves: row.reserves,
+                    token_in: tokenIdB,
+                  };
+                }),
+              ]
+            : [];
+        },
+        [tokenIdA, tokenIdB]
+      ),
+      // separate the SSE updates into their respective data sets
+      separateUpdates: useCallback(
+        (dataRows: DataRow[]) => {
+          const dataRowsTokenA: DataRow[] = [];
+          const dataRowsTokenB: DataRow[] = [];
+          return dataRows.reduce(
+            (acc, dataRow) => {
+              if (dataRow.token_in === tokenIdA) {
+                acc[0].push(dataRow);
+              } else if (dataRow.token_in === tokenIdB) {
+                acc[1].push(dataRow);
+              }
+              return acc;
+            },
+            [dataRowsTokenA, dataRowsTokenB]
+          );
+        },
+        [tokenIdA, tokenIdB]
+      ),
     }
   );
 }

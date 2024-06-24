@@ -8,7 +8,12 @@ import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
 
 import { days, hours, weeks } from '../../lib/utils/time';
 import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
-import { useIndexerStreamOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
+import {
+  AccumulatorOptions,
+  BaseTimeSeriesSSERow,
+  TimeSeriesPage,
+  useFetchSingleDataSetFromIndexer,
+} from '../../lib/web3/hooks/useIndexer';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
   TimeSeriesRow,
@@ -20,8 +25,6 @@ import { formatAmount } from '../../lib/utils/number';
 
 import './PoolChart.scss';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
-
-const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
 const timePeriodKeys: TimePeriodKey[] = ['24H', '1W', '1M', '1Y', 'ALL'];
 
@@ -44,7 +47,9 @@ export default function PoolChart({
   tokenB: Token;
 }) {
   const [chartIndex, setChartIndex] = useState<number>(0);
-  const [timePeriodIndex, setTimePeriodIndex] = useState<number>(0);
+  // start with weekly chart by default: 24H can have excessive detail
+  // and we would like the initial chart to load quickly
+  const [timePeriodIndex, setTimePeriodIndex] = useState<number>(1);
   const chartKey = chartKeys[chartIndex];
   const timePeriodKey = timePeriodKeys[timePeriodIndex];
   const ChartComponent = chartComponents[chartKey];
@@ -87,15 +92,16 @@ export default function PoolChart({
 function getPaginationLimit(timePeriodKey: TimePeriodKey): number | undefined {
   // add time restriction
   const now = Date.now();
+  // return unix times for API
   switch (timePeriodKey) {
     case '24H':
-      return now - hours * 24;
+      return Math.floor((now - hours * 24) / 1000);
     case '1W':
-      return now - weeks * 1;
+      return Math.floor((now - weeks * 1) / 1000);
     case '1M':
-      return now - weeks * 4;
+      return Math.floor((now - weeks * 4) / 1000);
     case '1Y':
-      return now - days * 365;
+      return Math.floor((now - days * 365) / 1000);
   }
 }
 
@@ -114,22 +120,35 @@ function getDataResolution(
   }
 }
 
-function useTimeSeriesData(
+function useTimeSeriesData<TimeSeriesDataRow extends BaseTimeSeriesSSERow>(
   pathPart: string,
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  getValues?: (values: number[]) => number[]
+  opts?: AccumulatorOptions<TimeSeriesDataRow>
 ) {
   const urlPath = useMemo(() => {
     const denomA = getIndexerTokenPathPart(tokenA);
     const denomB = getIndexerTokenPathPart(tokenB);
     const resolution = getDataResolution(timePeriodKey) || 'day';
     const from = getPaginationLimit(timePeriodKey) || 0;
-    return `${pathPart}/${denomA}/${denomB}/${resolution}?after=${from}`;
+    return `${pathPart}?${[
+      `token_a=${denomA}`,
+      `token_b=${denomB}`,
+      `resolution=${resolution}`,
+      `from_block_tmstmp=${from}`,
+    ].join('&')}`;
   }, [pathPart, tokenA, tokenB, timePeriodKey]);
-  const url = urlPath && `${REACT_APP__INDEXER_API}/${urlPath}`;
-  const stream = useIndexerStreamOfSingleDataSet<TimeSeriesRow>(url);
+  const stream = useFetchSingleDataSetFromIndexer<
+    TimeSeriesPage<TimeSeriesDataRow>,
+    TimeSeriesDataRow,
+    Map<number, number[]>
+  >(urlPath, {
+    // note: disabling SSE for now because API does not support subscriptions
+    //       at a resolution higher than seconds, which all of these charts are
+    disableSSE: true,
+    ...opts,
+  });
 
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
     const data = stream.data;
@@ -139,40 +158,31 @@ function useTimeSeriesData(
       return null;
     }
     // return uninitialized data state as "not yet defined", ie. a loading state
-    if (!data) {
+    const dataRows = data && Array.from(data);
+    if (!dataRows || !dataRows.length) {
       return undefined;
     }
     // sort timeseries rows chronologically
-    const chronologicalRows: TimeSeriesRow[] = Array.from(data).sort(
+    const chronologicalRows: TimeSeriesRow[] = dataRows.sort(
       (a, b) => a[0] - b[0]
     );
     // return success state as loading or data
-    return getValues
-      ? chronologicalRows
-          // map in specific values
-          .map(([timeUnix, values = []]) => {
-            return [timeUnix, getValues(values)];
-          })
-      : chronologicalRows;
-  }, [stream.data, stream.error, getValues]);
+    return chronologicalRows;
+  }, [stream.data, stream.error]);
 }
 
 // if data is in the form [timeUnix, [amountA, amountB]]
 // then transform the data using price data to [timeUnix, [valueA, valueB]]
-function useTimeSeriesTokenValues(
+function useTimeSeriesTokenValues<
+  TimeSeriesSSERow extends BaseTimeSeriesSSERow
+>(
   pathPart: string,
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  getValues?: (values: number[]) => number[]
+  opts?: AccumulatorOptions<TimeSeriesSSERow>
 ): TimeSeriesRow[] | null | undefined {
-  const data = useTimeSeriesData(
-    pathPart,
-    tokenA,
-    tokenB,
-    timePeriodKey,
-    getValues
-  );
+  const data = useTimeSeriesData(pathPart, tokenA, tokenB, timePeriodKey, opts);
   const {
     data: [priceA, priceB],
   } = useSimplePrice([tokenA, tokenB]);
@@ -198,8 +208,12 @@ function useTimeSeriesTokenValues(
 }
 
 // TVL
-function getStatTvlValues([amountA, amountB]: number[]): number[] {
-  return [amountA, amountB];
+interface TimeSeriesTvlDataRow extends BaseTimeSeriesSSERow {
+  tvl_a: string;
+  tvl_b: string;
+}
+function getTimeseriesTvlValues(row: TimeSeriesTvlDataRow): number[] {
+  return [Number(row.tvl_a), Number(row.tvl_b)];
 }
 function ChartTVL({
   tokenA,
@@ -211,11 +225,13 @@ function ChartTVL({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTokenValues(
-    'timeseries/tvl',
+    'v1/timeseries/tvl',
     tokenA,
     tokenB,
     timePeriodKey,
-    getStatTvlValues
+    {
+      getDataUpdateValue: getTimeseriesTvlValues,
+    }
   );
   return (
     <ChartBase
@@ -227,8 +243,15 @@ function ChartTVL({
   );
 }
 
-function getStatVolumeValues([amountA, amountB]: number[]): number[] {
-  return [amountA, amountB];
+// Volume
+interface TimeSeriesVolumeDataRow extends BaseTimeSeriesSSERow {
+  swap_volume_a: string;
+  swap_volume_b: string;
+  fee_a: string;
+  fee_b: string;
+}
+function getTimeseriesVolumeValues(row: TimeSeriesVolumeDataRow): number[] {
+  return [Number(row.swap_volume_a), Number(row.swap_volume_b)];
 }
 function ChartVolume({
   tokenA,
@@ -240,11 +263,13 @@ function ChartVolume({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTokenValues(
-    'timeseries/volume',
+    'v1/timeseries/volume',
     tokenA,
     tokenB,
     timePeriodKey,
-    getStatVolumeValues
+    {
+      getDataUpdateValue: getTimeseriesVolumeValues,
+    }
   );
   return (
     <ChartBase
@@ -256,8 +281,8 @@ function ChartVolume({
   );
 }
 
-function getStatFeeValues([, , amountA, amountB]: number[]): number[] {
-  return [amountA, amountB];
+function getTimeseriesFeeValues(row: TimeSeriesVolumeDataRow): number[] {
+  return [Number(row.fee_a), Number(row.fee_b)];
 }
 function ChartFees({
   tokenA,
@@ -269,11 +294,11 @@ function ChartFees({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTokenValues(
-    'timeseries/volume',
+    'v1/timeseries/volume',
     tokenA,
     tokenB,
     timePeriodKey,
-    getStatFeeValues
+    { getDataUpdateValue: getTimeseriesFeeValues }
   );
   return (
     <ChartBase
@@ -285,8 +310,16 @@ function ChartFees({
   );
 }
 
-function getStatVolatilityValues([, , , close]: number[]): number[] {
-  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+// Volatility
+// todo: this is actually showing price not volatility
+interface TimeSeriesPriceDataSSERow extends BaseTimeSeriesSSERow {
+  high: string;
+  low: string;
+  open: string;
+  close: string;
+}
+function getTimeseriesPriceValues(row: TimeSeriesPriceDataSSERow): number[] {
+  return [tickIndexToPrice(new BigNumber(row.close)).toNumber()];
 }
 function ChartVolatility({
   tokenA,
@@ -298,11 +331,11 @@ function ChartVolatility({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesData(
-    'timeseries/price',
+    'v1/timeseries/price',
     tokenA,
     tokenB,
     timePeriodKey,
-    getStatVolatilityValues
+    { getDataUpdateValue: getTimeseriesPriceValues }
   );
   return (
     <ChartBase

@@ -7,17 +7,6 @@ export function getIndexerTokenPathPart(token: Token) {
 }
 
 export type TimeSeriesRow = [unixTime: number, values: number[]];
-export type TimeSeriesPage = {
-  shape: Array<string>;
-  data: Array<TimeSeriesRow>;
-  pagination?: {
-    next_key?: string | null;
-  };
-  block_range: {
-    from_height: number;
-    to_height: number;
-  };
-};
 
 export function getLastDataValue(
   data: TimeSeriesRow[] | undefined,
