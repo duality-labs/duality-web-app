@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.0](https://github.com/duality-labs/duality-web-app/compare/v2.11.1...v2.12.0) (2024-06-24)
+
+
+### Features
+
+* update to P2P indexer ([#560](https://github.com/duality-labs/duality-web-app/issues/560)) ([26342f5](https://github.com/duality-labs/duality-web-app/commit/26342f5c661cfb644e59225a07ea9c87237040af))
+
 ## [2.11.1](https://github.com/duality-labs/duality-web-app/compare/v2.11.0...v2.11.1) (2024-06-05)
 
 
